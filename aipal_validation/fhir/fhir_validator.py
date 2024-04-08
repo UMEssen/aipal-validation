@@ -2,7 +2,7 @@ import logging
 
 import pandas as pd
 
-from fhirformer.fhir.util import OUTPUT_FORMAT, check_and_read, col_to_datetime
+from aipal_validation.fhir.util import OUTPUT_FORMAT, check_and_read, col_to_datetime
 
 logger = logging.getLogger(__name__)
 

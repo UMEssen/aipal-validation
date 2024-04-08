@@ -5,8 +5,8 @@ services:
     build:
       context: .
       dockerfile: "Dockerfile"
-    user: $DOCKER_USER:1009
-    image: "ship-ai/fhirformer"
+    user: $DOCKER_USER:$DOCKER_GROUP
+    image: "ship-ai/aipal_validation"
     runtime: nvidia
     shm_size: 32g
     ulimits:
@@ -32,10 +32,10 @@ services:
       - WANDB_DATA_DIR=/wandb
     volumes:
       - .:/app
-      - /raid/work/merengelke/fhirformer/wandb:/wandb
-      - /raid/work/merengelke/fhirformer:/data
+      - /raid/work/merengelke/aipal_validation/wandb:/wandb
+      - /raid/work/merengelke/aipal_validation:/data
 
 
 networks:
   default:
-    name: "fhirformer"
+    name: "aipal_validation"

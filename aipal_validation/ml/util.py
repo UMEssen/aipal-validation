@@ -38,9 +38,9 @@ def split_dataset(
 
 def init_wandb(config):
     project_name = (
-        "fhirformer_ds"
+        "aipal_validation_ds"
         if config["task"].startswith("ds_")
-        else "fhirformer_pretraining"
+        else "aipal_validation_pretraining"
     )
 
     wandb.init(

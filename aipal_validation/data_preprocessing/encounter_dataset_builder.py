@@ -9,14 +9,14 @@ from typing import Any, Dict, List
 import pandas as pd
 from tqdm import tqdm
 
-from fhirformer.data_preprocessing.data_store import DataStore
-from fhirformer.data_preprocessing.util import (
+from aipal_validation.data_preprocessing.data_store import DataStore
+from aipal_validation.data_preprocessing.util import (
     get_column_map_txt_resources,
     get_train_val_split,
     validate_resources,
 )
-from fhirformer.fhir.util import OUTPUT_FORMAT, check_and_read
-from fhirformer.helper.util import get_labels_info, get_nondependent_resources
+from aipal_validation.fhir.util import OUTPUT_FORMAT, check_and_read
+from aipal_validation.helper.util import get_labels_info, get_nondependent_resources
 
 logger = logging.getLogger(__name__)
 

@@ -4,10 +4,10 @@ from multiprocessing import Pool
 
 from tqdm import tqdm
 
-from fhirformer.data_preprocessing.encounter_dataset_builder import (
+from aipal_validation.data_preprocessing.encounter_dataset_builder import (
     EncounterDatasetBuilder,
 )
-from fhirformer.data_preprocessing.util import load_datastore, skip_build
+from aipal_validation.data_preprocessing.util import load_datastore, skip_build
 
 logger = logging.getLogger(__name__)
 

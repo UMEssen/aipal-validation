@@ -13,8 +13,8 @@ from fhir_pyrate.pirate import Pirate
 from sqlalchemy import text
 from tqdm import tqdm
 
-from fhirformer.fhir.functions import extract_bdp, extract_imaging_study
-from fhirformer.fhir.util import (
+from aipal_validation.fhir.functions import extract_bdp, extract_imaging_study
+from aipal_validation.fhir.util import (
     FOLDER_DEPTH,
     OUTPUT_FORMAT,
     auth,
@@ -27,7 +27,7 @@ from fhirformer.fhir.util import (
     reduce_cardinality,
     store_df,
 )
-from fhirformer.helper.util import timed
+from aipal_validation.helper.util import timed
 
 logger = logging.getLogger(__name__)
 

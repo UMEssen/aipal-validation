@@ -47,9 +47,11 @@ def check_icd_occurrence(config):
     conds_df = conds_df[~pd.isna(conds_df.icd_code_root)]
     conds_df["condition_date"] = pd.to_datetime(conds_df["condition_date"])
 
-    conds_df.reset_index(drop=True).to_feather("fhirformer/helper/conditions_dt.ftr")
+    conds_df.reset_index(drop=True).to_feather(
+        "aipal_validation/helper/conditions_dt.ftr"
+    )
 
-    conds_df = pd.read_feather("fhirformer/helper/conditions_dt.ftr")
+    conds_df = pd.read_feather("aipal_validation/helper/conditions_dt.ftr")
 
     conds_df["condition_year"] = conds_df["condition_date"].apply(
         lambda x: pd.to_datetime(x).year if not pd.isnull(x) else x
@@ -69,9 +71,9 @@ def check_icd_occurrence(config):
     print(conds_df["condition_date"].min())
     print(conds_df["condition_date"].max())
 
-    # conds_df.to_feather('fhirformer/helper/conditions.ftr')
+    # conds_df.to_feather('aipal_validation/helper/conditions.ftr')
 
-    # conds_df = pd.read_feather('fhirformer/helper/conditions.ftr')
+    # conds_df = pd.read_feather('aipal_validation/helper/conditions.ftr')
     print(conds_df.columns)
     print(conds_df.shape)
     print(len(conds_df))
@@ -83,7 +85,7 @@ def check_icd_occurrence(config):
         & (conds_df["condition_date"] <= end_date)
     ]
     filtered_df.reset_index(drop=True).to_feather(
-        "fhirformer/helper/conditions_filtered.ftr"
+        "aipal_validation/helper/conditions_filtered.ftr"
     )
 
     # years = [2017, 2018, 2019, 2020, 2021, 2022]

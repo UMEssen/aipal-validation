@@ -1,21 +1,12 @@
 import logging
-import pickle
 import random
-from pathlib import Path
 from typing import List
 
 import pandas as pd
 
-from fhirformer.data_preprocessing.data_store import DataStore
-from fhirformer.fhir.util import check_and_read
+from aipal_validation.fhir.util import check_and_read
 
 logger = logging.getLogger(__name__)
-
-
-def load_datastore(datastore_path: Path):
-    with datastore_path.open("rb") as f:
-        datastore = pickle.load(f)
-    return datastore
 
 
 def get_train_val_split(
@@ -79,13 +70,6 @@ def get_column_map_txt_resources(config, resources_for_pre_training):
         for k, v in config["text_sampling_column_maps"].items()
         if k in resources_for_pre_training
     }
-
-
-def get_patient_ids_lists(store_list: List["DataStore"]):
-    return [
-        store_global.patient_df["patient_id"].unique().tolist()
-        for store_global in store_list
-    ]
 
 
 def skip_build(config: dict) -> bool:

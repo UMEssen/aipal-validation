@@ -7,8 +7,7 @@ from typing import Optional
 import pandas as pd
 from tqdm import tqdm
 
-from fhirformer.data_preprocessing.constants import TUMOR_TYPE_MAP
-from fhirformer.fhir.util import (
+from aipal_validation.fhir.util import (
     OUTPUT_FORMAT,
     check_and_read,
     col_to_datetime,
@@ -359,7 +358,6 @@ class FHIRFilter:
         output_path = self.config["task_dir"] / f"episode_of_care{OUTPUT_FORMAT}"
         if (df_eoc := self.basic_filtering("episode_of_care", save=False)) is None:
             return
-        df_eoc["treatment_program"] = df_eoc["treatment_program"].map(TUMOR_TYPE_MAP)
         store_df(df_eoc, output_path)
 
     def filter_service_request_pyrate(self):
@@ -377,18 +375,6 @@ class FHIRFilter:
             "category_display",
         ]:
             df[col] = reduce_cardinality(df[col], set_to_none=True)
-
-        # Moved the dropping of categories to here
-        # TODO: Why is this needed? We can also make it depend on the task
-        # cats_to_drop = [
-        #     x
-        #     for x in df.category_display.dropna().unique()
-        #     if "labor" in x.lower()
-        #     or "Imaging" in x
-        #     or "radio" in x.lower()
-        #     or "Röntgen" in x
-        # ]
-        # df = df[~df.category_display.isin(cats_to_drop)]
 
         df = df[df["status"].isin(["active", "completed", "draft", "unknown"])]
         df.dropna(subset=["patient_id"], inplace=True)

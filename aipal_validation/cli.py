@@ -1,60 +1,23 @@
 import argparse
 import logging
 import pickle
-from datetime import datetime
 from pathlib import Path
 
-import pytz
-import wandb
 import yaml
 
-from fhirformer.data_preprocessing import (
-    generate_ds_icd_samples,
-    generate_ds_image_samples,
-    generate_ds_main_icd,
-    generate_ds_readmission_samples,
-    generate_pre_train_samples,
-    sentence_extractor,
-)
-from fhirformer.fhir import FHIRExtractor, FHIRFilter, FHIRValidator
-from fhirformer.helper.util import (
+from aipal_validation.data_preprocessing import generate_ds_readmission_samples
+from aipal_validation.fhir import FHIRExtractor, FHIRFilter, FHIRValidator
+from aipal_validation.helper.util import (
     get_nondependent_resources,
     is_main_process,
     name_from_model,
     timed,
 )
-from fhirformer.ml import ds_multi_label, ds_single_label, inference, pre_train_llm
-from fhirformer.ml.util import init_wandb
+from aipal_validation.ml import test
+from aipal_validation.ml.util import init_wandb
 
 pipelines = {
-    "ds_icd": {
-        "generate": generate_ds_icd_samples.main,
-        "train": ds_multi_label.main,
-    },
-    "ds_image": {
-        "generate": generate_ds_image_samples.main,
-        "train": ds_multi_label.main,
-    },
-    "ds_readmission": {
-        "generate": generate_ds_readmission_samples.main,
-        "train": ds_single_label.main,
-    },
-    "ds_main_icd": {
-        "generate": generate_ds_main_icd.main,
-        "train": ds_single_label.main,
-    },
-    "pretrain_fhir_documents": {
-        "generate": [generate_pre_train_samples.main, sentence_extractor.main],
-        "train": pre_train_llm.main,
-    },
-    "pretrain_fhir": {
-        "generate": generate_pre_train_samples.main,
-        "train": pre_train_llm.main,
-    },
-    "pretrain_documents": {
-        "generate": sentence_extractor.main,
-        "train": pre_train_llm.main,
-    },
+    "ai_val": {"generate": generate_ds_readmission_samples.main, "test": test},
 }
 
 
@@ -72,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 # Load config file
-def load_config(file_path: str = "fhirformer/config/config_training.yaml"):
+def load_config(file_path: str = "aipal_validation/config/config_training.yaml"):
     return yaml.safe_load((Path.cwd() / file_path).open())
 
 
@@ -125,11 +88,6 @@ def parse_args_local(config) -> argparse.Namespace:
         help="Path to trained model or huggingface model name as string",
     )
     parser.add_argument(
-        "--train_epochs",
-        type=int,
-        default=50,
-    )
-    parser.add_argument(
         "--task",
         type=str,
         default=config["task"],
@@ -139,16 +97,6 @@ def parse_args_local(config) -> argparse.Namespace:
         "--debug",
         action="store_true",
         default=config["debug"],
-    )
-    parser.add_argument(
-        "--download_documents",
-        action="store_true",
-        default=config["download_documents"],
-    )
-    parser.add_argument(
-        "--step",
-        default=config["step"],
-        help="Plus separated list steps to run. Valid options: data, sampling, train, all.",
     )
     parser.add_argument("--run_name", type=str, default=None)
 
@@ -162,7 +110,7 @@ def run():
     config.update(vars(args))
     if config["debug"]:
         logger.warning(
-            "WARNING!!! You are running fhirformer in debug mode, "
+            "WARNING!!! You are running aipal_validation in debug mode, "
             "please change this when you are done testing."
         )
 
@@ -182,7 +130,7 @@ def run():
     )
 
     if config["step"] == "all":
-        config["step"] = "data+sampling+train+test"
+        config["step"] = "data+sampling+test"
 
     config["step"] = config["step"].split("+")
 
@@ -190,8 +138,6 @@ def run():
         build_cache(config)
         with (config["task_dir"] / "config_data.pkl").open("wb") as of:
             pickle.dump(config, of)
-        if config["download_documents"]:
-            exit()
 
     assert config["task"] in pipelines, f"Task {config['task']} not found."
 
@@ -207,31 +153,6 @@ def run():
         with (config["task_dir"] / "config_sampling.pkl").open("wb") as of:
             pickle.dump(config, of)
 
-    if "train" in config["step"] or "test" in config["step"]:
-        init_wandb(config)
-
-    if "train" in config["step"]:
-        german_tz = pytz.timezone("Europe/Berlin")
-        current_time_german = datetime.now(german_tz).strftime("%Y%m%d_%H_%M")
-
-        config["model_dir"] = (
-            config["task_dir"]
-            / config["model_name"]
-            / (
-                current_time_german
-                + "_"
-                + (wandb.run.id if not config["debug"] else "debug")
-            )
-        )
-
-        pipelines[config["task"]]["train"](config)
-        with (config["task_dir"] / "config_train.pkl").open("wb") as of:
-            pickle.dump(config, of)
-
-        # Set the model checkpoint to model dir such that it can be used for inference
-        config["model_checkpoint"] = config["model_dir"] / "best"
-
     if "test" in config["step"]:
-        inference.main(config)
-        with (config["task_dir"] / "config_test.pkl").open("wb") as of:
-            pickle.dump(config, of)
+        init_wandb(config)
+        test.main()
