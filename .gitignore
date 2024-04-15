@@ -15,3 +15,6 @@ jupyter/tokenizer_test.ipynb
 tmp.sh
 aipal_validation/config/config_training.yaml
 .ipynb
+jupiter/
+data
+jupyter/tmp.cmd

@@ -30,17 +30,6 @@ def timed(func):
     return wrapper
 
 
-def get_nondependent_resources(config):
-    non_dependent_resources = config["resources_for_task"].get(config["task"], None)
-    if non_dependent_resources is None:
-        logger.warning(
-            f"Task {config['task']} not found in resources_for_task of the config, "
-            f"using default value."
-        )
-        non_dependent_resources = config["resources_for_task"].get("default")
-    return non_dependent_resources
-
-
 def name_from_model(
     model_name: Union[str, Path], roformer: bool = False
 ) -> Tuple[str, str, bool]:

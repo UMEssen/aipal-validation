@@ -16,7 +16,7 @@ from aipal_validation.data_preprocessing.util import (
     validate_resources,
 )
 from aipal_validation.fhir.util import OUTPUT_FORMAT, check_and_read
-from aipal_validation.helper.util import get_labels_info, get_nondependent_resources
+from aipal_validation.helper.util import get_labels_info
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,6 @@ class EncounterDatasetBuilder:
         self.num_processes = config["num_processes"]
         self.config = config
         self.sample_by_letter = None
-        self.resources_for_task = get_nondependent_resources(self.config)
         validate_resources(self.resources_for_task, self.config)
         self.filtered_text_sampling_column_maps = get_column_map_txt_resources(
             self.config, self.resources_for_task

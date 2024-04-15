@@ -11,26 +11,11 @@ class FHIRValidator:
     def __init__(self, config):
         self.config = config
         self.resource_schemas = {
-            "condition": [("patient_id", True), ("icd_code", True)],
-            "encounter": [("patient_id", True)],
-            "biologically_derived_product": [("ausgabe_datetime", False)],
-            "patient": [("patient_id", True)],
-            "procedure": [("patient_id", False)],
-            "medicationstatement": [
-                ("medicationName", True),
-                ("patient_id", True),
-                ("event_time", True),
-            ],
-            "observation": [("patient_id", True), ("value_quantity", True)],
-            "imaging_study": [("patient_id", True)],
-            "episode_of_care": [("patient_id", True)],
-            "service_request": [("patient_id", True)],
-            "diagnostic_report": [("patient_id", True)],
-            "medication": [("patient_id", True)],
+            "observation": [("encounter_id", True), ("value", True)],
+            "patient_condition": [("encounter_id", True)],
         }
 
     def validate(self, resource: str):
-        # TODO: Add check for unique IDs for each resource type
         resource = resource.lower()
         if self.config["skip_validation"]:
             pass

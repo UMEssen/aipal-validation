@@ -5,19 +5,14 @@ from pathlib import Path
 
 import yaml
 
-from aipal_validation.data_preprocessing import generate_ds_readmission_samples
+from aipal_validation.data_preprocessing import generate_samples
 from aipal_validation.fhir import FHIRExtractor, FHIRFilter, FHIRValidator
-from aipal_validation.helper.util import (
-    get_nondependent_resources,
-    is_main_process,
-    name_from_model,
-    timed,
-)
+from aipal_validation.helper.util import is_main_process, timed
 from aipal_validation.ml import test
 from aipal_validation.ml.util import init_wandb
 
 pipelines = {
-    "ai_val": {"generate": generate_ds_readmission_samples.main, "test": test},
+    "aipal": {"generate": generate_samples.main, "test": test.main},
 }
 
 
@@ -41,38 +36,21 @@ def load_config(file_path: str = "aipal_validation/config/config_training.yaml")
 
 @timed
 def build_cache(config):
-    logger.info(
-        f"Extracting data between {config['start_datetime']} and {config['end_datetime']}."
-    )
     extract = FHIRExtractor(config)
     filt = FHIRFilter(config)
     validator = FHIRValidator(config)
 
-    non_dependent_resources = get_nondependent_resources(config)
-
-    # TODO: think about merging encounters with based basedon
-    #  Encounter/95e3c9cb3f4b5bd691b9a426096506c44ce070cd63d8643fe572ab7c5d844c2a
-    dependent_resources = sorted(["encounter", "patient"])
-    # dependent_resources = []
-    logger.info(
-        f"The following resources will be computed: "
-        f"{dependent_resources + non_dependent_resources}"
-    )
-
-    # encounter need to be build first
-    for resource in dependent_resources + non_dependent_resources:
+    resources = ["patient_condition", "observation"]
+    for resource in resources:
         logger.info(f"Extracting {resource}...")
         extract.build(resource)
 
-    if config["task"] == "None":
-        logger.info("Skipping filtering and validation because task is none.")
-        return
     config["task_dir"].mkdir(parents=True, exist_ok=True)
-    # filter patients needs to run first as we filter patients based on encounters patient_ids
-    for resource in sorted(dependent_resources, reverse=True) + non_dependent_resources:
+    for resource in resources:
         logger.info(f"Filtering {resource}...")
         filt.filter(resource)
-    for resource in dependent_resources + non_dependent_resources:
+
+    for resource in resources:
         logger.info(f"Validating {resource}...")
         validator.validate(resource)
 
@@ -81,12 +59,6 @@ def parse_args_local(config) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root_dir", type=Path, default=config["root_dir"])
     parser.add_argument("--wandb", action="store_true", default=False)
-    parser.add_argument(
-        "--model_checkpoint",
-        type=str,
-        default=config["model_checkpoint"],
-        help="Path to trained model or huggingface model name as string",
-    )
     parser.add_argument(
         "--task",
         type=str,
@@ -97,6 +69,11 @@ def parse_args_local(config) -> argparse.Namespace:
         "--debug",
         action="store_true",
         default=config["debug"],
+    )
+    parser.add_argument(
+        "--step",
+        type=str,
+        default="all",
     )
     parser.add_argument("--run_name", type=str, default=None)
 
@@ -117,11 +94,6 @@ def run():
     config["root_dir"] = config["root_dir"] / config["run_id"]
     config["data_dir"] = config["root_dir"] / "data_raw"
     config["data_dir"].mkdir(parents=True, exist_ok=True)
-
-    # Create model folder
-    config["model"], config["model_name"], config["loaded_model"] = name_from_model(
-        config["model_checkpoint"], config["use_roformer"]
-    )
 
     config["task_dir"] = config["root_dir"] / config["task"]
 

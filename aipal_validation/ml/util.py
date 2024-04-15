@@ -1,11 +1,8 @@
 import os
-from typing import Tuple
 
 import numpy as np
 import wandb
-from datasets import Dataset
 from sklearn.metrics import f1_score, precision_score, recall_score
-from sklearn.model_selection import StratifiedGroupKFold
 
 
 def get_param_for_task_model(config, param: str, task: str, model: str):
@@ -17,23 +14,23 @@ def get_param_for_task_model(config, param: str, task: str, model: str):
     return config[param]["default"]
 
 
-def split_dataset(
-    dataset: Dataset, train_ratio: float = 0.8, ignore_labels: bool = False
-) -> Tuple[Dataset, Dataset]:
-    # TODO: Fix this to make it work with other splits, now it's just for ease of use
-    assert train_ratio == 0.8, "Only 80/20 split is supported for now."
-    labels = [0] * len(dataset)
-    if not ignore_labels:
-        if "multiclass_labels" in dataset.column_names:
-            labels = dataset["multiclass_labels"]
-        elif "labels" in dataset.column_names:
-            labels = dataset["labels"]
+# def split_dataset(
+#     dataset: Dataset, train_ratio: float = 0.8, ignore_labels: bool = False
+# ) -> Tuple[Dataset, Dataset]:
+#     # TODO: Fix this to make it work with other splits, now it's just for ease of use
+#     assert train_ratio == 0.8, "Only 80/20 split is supported for now."
+#     labels = [0] * len(dataset)
+#     if not ignore_labels:
+#         if "multiclass_labels" in dataset.column_names:
+#             labels = dataset["multiclass_labels"]
+#         elif "labels" in dataset.column_names:
+#             labels = dataset["labels"]
 
-    # Split the dataset into training and validation sets
-    splitter = StratifiedGroupKFold(n_splits=5, random_state=42, shuffle=True)
-    split = splitter.split(dataset, y=labels, groups=dataset["patient_id"])
-    train_inds, val_inds = next(split)
-    return dataset.select(train_inds), dataset.select(val_inds)
+#     # Split the dataset into training and validation sets
+#     splitter = StratifiedGroupKFold(n_splits=5, random_state=42, shuffle=True)
+#     split = splitter.split(dataset, y=labels, groups=dataset["patient_id"])
+#     train_inds, val_inds = next(split)
+#     return dataset.select(train_inds), dataset.select(val_inds)
 
 
 def init_wandb(config):
@@ -54,7 +51,6 @@ def init_wandb(config):
         mode="disabled" if config["debug"] else "online",
         entity="ship-ai-autopilot",
         group=config["task"].split("_")[1],
-        resume=config["run_name"] if config["model_checkpoint"] else None,
     )
     wandb.run.log_code(".")
 
