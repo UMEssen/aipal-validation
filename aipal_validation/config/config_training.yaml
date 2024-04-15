@@ -27,7 +27,7 @@ obs_codes_si:
   zTPZCS: ['%', 0.1, '%/10']
   zLDH: ['U/l', 1, 'U/l']
   zMCHC: ['g/dl', 10, 'g/l']
-  zLEUA: ['nl', 1, 'nl']
+  zLEUA: ['/nl', 1, '/nl']
   zFIBRCS: ['mg/dl', 100, 'g/l']
   zMON#: ['/nl', 1, '/nl']
   zTHRA: ['/nl', 1, '/nl']

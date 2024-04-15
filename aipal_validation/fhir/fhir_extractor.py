@@ -182,7 +182,7 @@ class FHIRExtractor:
 
     def build_observation(self):
         pats_cond = check_and_read(
-            self.config["data_dir"] / f"patient_condition{OUTPUT_FORMAT}"
+            self.config["task_dir"] / f"patient_condition{OUTPUT_FORMAT}"
         )
         pats_cond_ids = "', '".join(pats_cond["encounter_id"].unique().tolist())
         obs_codes_str = "', '".join(list(self.config["obs_codes_si"].keys()))
@@ -247,5 +247,6 @@ class FHIRExtractor:
                         encounter_period ep1 ON ep1._resource = e1._id
                     WHERE
                         fhirql_code(ccc0.code) IN ('{Lk_code_values_str}')
+                    limit 10000
                     """,
         )

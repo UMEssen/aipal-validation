@@ -40,17 +40,14 @@ def build_cache(config):
     filt = FHIRFilter(config)
     validator = FHIRValidator(config)
 
+    config["task_dir"].mkdir(parents=True, exist_ok=True)
+
     resources = ["patient_condition", "observation"]
     for resource in resources:
         logger.info(f"Extracting {resource}...")
         extract.build(resource)
-
-    config["task_dir"].mkdir(parents=True, exist_ok=True)
-    for resource in resources:
         logger.info(f"Filtering {resource}...")
         filt.filter(resource)
-
-    for resource in resources:
         logger.info(f"Validating {resource}...")
         validator.validate(resource)
 

@@ -95,21 +95,20 @@ class FHIRFilter:
 
     def filter_conditions(self) -> None:
         output_path = self.config["task_dir"] / f"patient_condition{OUTPUT_FORMAT}"
-        if (
-            enc_pat_cond := self.basic_filtering("patient_condition", save=False)
-        ) is None:
-            return
+        enc_pat_cond = self.basic_filtering("patient_condition", save=False)
 
         # Returns the earliest condition for each patient
-        pats_cond = pd.DataFrame()
-        uq_pats = enc_pat_cond.patient_id.unique()
-        for pat in uq_pats:
+        first_conditions = []
+        for pat in enc_pat_cond.patient_id.unique():
             pat_cond = enc_pat_cond[enc_pat_cond.patient_id == pat]
-            first_pat_cond = pat_cond.loc[pat_cond.recorded_date.idxmin()].to_frame().T
-            print(type(first_pat_cond))
-            print(first_pat_cond)
-            pats_cond = pd.concat([pats_cond, first_pat_cond])
-        pats_cond.reset_index(drop=True, inplace=True)
+            if not pat_cond.empty:
+                first_pat_cond = pd.DataFrame(
+                    [pat_cond.loc[pat_cond.recorded_date.idxmin()]]
+                )
+                first_conditions.append(first_pat_cond)
+
+        if first_conditions:
+            pats_cond = pd.concat(first_conditions).reset_index(drop=True)
 
         pats_cond = pats_cond.dropna(
             subset=["encounter_id", "patient_id", "condition_id"]
@@ -123,21 +122,28 @@ class FHIRFilter:
 
     def filter_observation(self):
         output_path = self.config["task_dir"] / f"observation{OUTPUT_FORMAT}"
-        if (obs := self.basic_filtering("observation", save=False)) is None:
+        obs = self.basic_filtering("observation", save=False)
+        if obs is None:
             return
 
-        # for each encounter get the earliest observation based on each code
-        obs_by_enc = pd.DataFrame()
+        # Initialize an empty list to collect DataFrames
+        all_first_obs = []
+
+        # For each encounter, get the earliest observation based on each code
         for enc_id in obs.encounter_id.unique():
             enc_obs = obs[obs.encounter_id == enc_id]
             for code in enc_obs.code.unique():
                 code_obs = enc_obs[enc_obs.code == code]
-                first_code_obs = (
-                    code_obs.loc[code_obs.effectiveDateTime.idxmin()].to_frame().T
-                )
-                obs_by_enc = pd.concat([obs_by_enc, first_code_obs])
-        obs_by_enc.reset_index(drop=True, inplace=True)
+                if not code_obs.empty:  # Check if the filtered DataFrame is not empty
+                    first_code_obs = pd.DataFrame(
+                        [code_obs.loc[code_obs.effectiveDateTime.idxmin()]]
+                    )
+                    all_first_obs.append(first_code_obs)
 
-        df_obs = self.observations_to_si(obs_by_enc)
-
-        store_df(df_obs, output_path)
+        # Concatenate all the DataFrames in the list, if the list is not empty
+        if all_first_obs:
+            obs_by_enc = pd.concat(all_first_obs).reset_index(drop=True)
+            df_obs = self.observations_to_si(obs_by_enc)
+            store_df(df_obs, output_path)
+        else:
+            logging.ERROR("No observations found")
