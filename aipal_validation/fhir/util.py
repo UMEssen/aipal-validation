@@ -122,6 +122,8 @@ def store_df(df: pd.DataFrame, output_path: Path, resource: str = "resource"):
         df.reset_index(drop=True).to_feather(output_path)
     elif output_path.name.endswith(".pkl"):
         df.reset_index(drop=True).to_pickle(output_path)
+    elif output_path.name.endswith(".csv"):
+        df.to_csv(output_path, index=False)
     else:
         raise ValueError(f"Output format not supported for {output_path}")
 

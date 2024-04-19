@@ -22,16 +22,18 @@ LK_codes: {
 }
 
 # unit siwsslab to si
+# siwsslab_label: [unit, factor, si_unit, aipal_label]
 obs_codes_si:
-  zMCV: ['fl', 1, 'fl']
-  zTPZCS: ['%', 0.1, '%/10']
-  zLDH: ['U/l', 1, 'U/l']
-  zMCHC: ['g/dl', 10, 'g/l']
-  zLEUA: ['/nl', 1, '/nl']
-  zFIBRCS: ['mg/dl', 100, 'g/l']
-  zMON#: ['/nl', 1, '/nl']
-  zTHRA: ['/nl', 1, '/nl']
-  zLYM#: ['/nl', 1, '/nl']
+  zMCV: ['fl', 1, 'fl', 'MCV_fL']
+  zTPZCS: ['%', 0.1, '%/10', 'PT_percent']
+  zLDH: ['U/l', 1, 'U/l', 'LDH_UI_L']
+  zMCHC: ['g/dl', 10, 'g/l', 'MCHC_g_L']
+  zLEUA: ['/nl', 1, '/nl', 'WBC_G_L']
+  zFIBRCS: ['mg/dl', 100, 'g/l', 'Fibrinogen_g_L']
+  zMON#: ['/nl', 1, '/nl', 'Monocytes_G_L']
+  zTHRA: ['/nl', 1, '/nl', 'Platelets_G_L']
+  zLYM#: ['/nl', 1, '/nl', 'Lymphocytes_G_L']
+
 
 eval_accumulation_steps: 5
 
