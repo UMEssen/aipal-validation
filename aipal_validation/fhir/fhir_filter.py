@@ -123,6 +123,7 @@ class FHIRFilter:
     def filter_observation(self):
         output_path = self.config["task_dir"] / f"observation{OUTPUT_FORMAT}"
         obs = self.basic_filtering("observation", save=False)
+        obs = obs.dropna(subset=["effectiveDateTime"])
         if obs is None:
             return
 

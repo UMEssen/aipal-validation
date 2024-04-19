@@ -1,8 +1,9 @@
 import os
 
 import numpy as np
-import wandb
 from sklearn.metrics import f1_score, precision_score, recall_score
+
+import wandb
 
 
 def get_param_for_task_model(config, param: str, task: str, model: str):
@@ -14,43 +15,13 @@ def get_param_for_task_model(config, param: str, task: str, model: str):
     return config[param]["default"]
 
 
-# def split_dataset(
-#     dataset: Dataset, train_ratio: float = 0.8, ignore_labels: bool = False
-# ) -> Tuple[Dataset, Dataset]:
-#     # TODO: Fix this to make it work with other splits, now it's just for ease of use
-#     assert train_ratio == 0.8, "Only 80/20 split is supported for now."
-#     labels = [0] * len(dataset)
-#     if not ignore_labels:
-#         if "multiclass_labels" in dataset.column_names:
-#             labels = dataset["multiclass_labels"]
-#         elif "labels" in dataset.column_names:
-#             labels = dataset["labels"]
-
-#     # Split the dataset into training and validation sets
-#     splitter = StratifiedGroupKFold(n_splits=5, random_state=42, shuffle=True)
-#     split = splitter.split(dataset, y=labels, groups=dataset["patient_id"])
-#     train_inds, val_inds = next(split)
-#     return dataset.select(train_inds), dataset.select(val_inds)
-
-
 def init_wandb(config):
-    project_name = (
-        "aipal_validation_ds"
-        if config["task"].startswith("ds_")
-        else "aipal_validation_pretraining"
-    )
-
     wandb.init(
-        tags=["baseline"],
-        project=project_name,
-        name=config["model_name"]
-        + "_"
-        + config["run_id"]
-        + "_sampling_"
-        + config["data_id"][config["task"]],
+        tags=["test"],
+        project="aipal_validation_ds",
         mode="disabled" if config["debug"] else "online",
         entity="ship-ai-autopilot",
-        group=config["task"].split("_")[1],
+        config=config,
     )
     wandb.run.log_code(".")
 
