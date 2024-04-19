@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+import subprocess
 import time
 from pathlib import Path
 from typing import Tuple, Union
@@ -91,3 +92,25 @@ def clear_process_data(config):
                     shutil.rmtree(file_path)
             except Exception as e:
                 logger.info("Failed to delete %s. Reason: %s" % (file_path, e))
+
+
+def run_r_script():
+    try:
+        # Path to the R script
+        r_script_path = "r/predict.R"
+
+        # Command to run the R script
+        command = ["Rscript", r_script_path]
+
+        # Running the command
+        result = subprocess.run(command, capture_output=True, text=True, check=True)
+
+        # Correctly formatted logging output
+        logging.info("R script output: %s", result.stdout)
+        logging.info("R script errors: %s", result.stderr)
+
+    except subprocess.CalledProcessError as e:
+        # Correctly formatted logging error
+        logging.error("Error running R script: %s", e)
+        logging.error("R script output: %s", e.stdout)
+        logging.error("R script errors: %s", e.stderr)
