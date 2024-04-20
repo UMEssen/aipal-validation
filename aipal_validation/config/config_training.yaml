@@ -42,3 +42,17 @@ folders_to_clear: [""]
 
 # Sampling
 num_processes: 30
+
+cutoffs:
+  - category: "ALL"
+    PPV: 0.9593636
+    NPV: 0.04462764
+    ACC: 0.4528432
+  - category: "AML"
+    PPV: 0.9448341
+    NPV: 0.02712490
+    ACC: 0.5001304
+  - category: "APL"
+    PPV: 0.7487954
+    NPV: 0.04154142
+    ACC: 0.3770665

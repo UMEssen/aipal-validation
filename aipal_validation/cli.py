@@ -7,9 +7,8 @@ import yaml
 
 from aipal_validation.data_preprocessing import generate_samples
 from aipal_validation.fhir import FHIRExtractor, FHIRFilter, FHIRValidator
-from aipal_validation.helper.util import is_main_process, run_r_script, timed
+from aipal_validation.helper.util import is_main_process, timed
 from aipal_validation.ml import test
-from aipal_validation.ml.util import init_wandb
 
 pipelines = {
     "aipal": {"generate": generate_samples.main, "test": test.main},
@@ -123,6 +122,5 @@ def run():
             pickle.dump(config, of)
 
     if "test" in config["step"]:
-        init_wandb(config)
-        run_r_script()
-        test.main()
+        # run_r_script()
+        test.main(config)
