@@ -25,15 +25,19 @@ LK_codes: {
 # siwsslab_label: [unit, factor, si_unit, aipal_label]
 obs_codes_si:
   zMCV: ['fl', 1, 'fl', 'MCV_fL']
-  zTPZCS: ['%', 0.1, '%/10', 'PT_percent']
+  zTPZCS: ['%', 1, '%', 'PT_percent']
   zLDH: ['U/l', 1, 'U/l', 'LDH_UI_L']
   zMCHC: ['g/dl', 10, 'g/l', 'MCHC_g_L']
   zLEUA: ['/nl', 1, '/nl', 'WBC_G_L']
-  zFIBRCS: ['mg/dl', 100, 'g/l', 'Fibrinogen_g_L']
+  zFIBRCS: ['mg/dl', 0.01, 'g/l', 'Fibrinogen_g_L']
   zMON#: ['/nl', 1, '/nl', 'Monocytes_G_L']
   zTHRA: ['/nl', 1, '/nl', 'Platelets_G_L']
   zLYM#: ['/nl', 1, '/nl', 'Lymphocytes_G_L']
 
+# prereq: codes values are alredy in si units
+merge_codes:
+  zMON# : ['zMONOMA']
+  zLYM# : ['zLYMPMA']
 
 eval_accumulation_steps: 5
 

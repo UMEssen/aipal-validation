@@ -186,6 +186,7 @@ class FHIRExtractor:
         )
         pats_cond_ids = "', '".join(pats_cond["encounter_id"].unique().tolist())
         obs_codes_str = "', '".join(list(self.config["obs_codes_si"].keys()))
+        obs_codes_str += "', '".join(list(self.config["merge_codes"].values()))
         self.default_metrics_extraction(
             output_name="observation",
             query=f"""

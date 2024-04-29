@@ -2,41 +2,48 @@ import logging
 
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import label_binarize
+from sklearn.utils import resample
 
 import wandb
 from aipal_validation.ml.util import init_wandb
 
 
 class LeukemiaModelEvaluator:
-    def __init__(self, data, config):
+    def __init__(self, data, config, ds_name):
         self.data = data
         self.config = config
         self.cutoffs = {c["category"]: c for c in config["cutoffs"]}
+        wandb.log({"Evaluating": ds_name})
+        wandb.log({"Cohort Size": len(self.data)})
+        wandb.log({"Cohort Distribution": data["age"].describe().to_dict()})
 
     def log_to_wandb(self, results, phase="Evaluation"):
-        # Create a table with columns
-        columns = ["Category", "AUC", "Accuracy", "Precision", "Recall", "F1 Score"]
+        columns = ["Category", "Metric", "Mean", "CI Lower-Upper"]
         wandb_table = wandb.Table(columns=columns)
 
-        # Fill the table with data
         for cat, metrics in results.items():
-            row = [cat] + [
-                metrics[metric] for metric in columns[1:]
-            ]  # List comprehension to retrieve metrics
-            wandb_table.add_data(*row)
+            for metric, values in metrics.items():
+                mean_val, ci_lower, ci_upper = values
+                wandb_table.add_data(
+                    cat,
+                    metric,
+                    mean_val,
+                    f"[{np.round(ci_lower, 2)}, {np.round(ci_upper, 2)}]",
+                )
 
-        # Log the table to wandb
         wandb.log({f"{phase} Metrics": wandb_table})
 
-    def calculate_auc(self):
+    def calculate_auc(self, data):
         classes = ["ALL", "AML", "APL"]
-        y_true = label_binarize(self.data["class"], classes=classes)
+        # one vs all fastion
+        y_true = label_binarize(data["class"], classes=classes)
         auc_scores = {}
 
         for i, cat in enumerate(classes):
-            y_score = self.data[f"prediction.{cat}"]
+            y_score = data[f"prediction.{cat}"]
             if (
                 len(np.unique(y_true[:, i])) == 1
             ):  # AUC not defined in cases with one label only
@@ -45,13 +52,13 @@ class LeukemiaModelEvaluator:
                 auc_scores[cat] = roc_auc_score(y_true[:, i], y_score)
         return auc_scores
 
-    def apply_cutoffs(self):
+    def apply_cutoffs(self, data):
         for cat in ["ALL", "AML", "APL"]:
             cutoff = self.cutoffs[cat]
             ppv_cutoff = cutoff["PPV"]
             npv_cutoff = cutoff["NPV"]
 
-            self.data[f"confident.{cat}"] = self.data[f"prediction.{cat}"].apply(
+            data[f"confident.{cat}"] = data[f"prediction.{cat}"].apply(
                 lambda x: (
                     "Confident"
                     if x >= ppv_cutoff
@@ -59,25 +66,25 @@ class LeukemiaModelEvaluator:
                 )
             )
 
-    def calculate_metrics(self, is_cutoff=False):
+    def calculate_metrics(self, data, is_cutoff=False):
         if is_cutoff:
-            self.apply_cutoffs()
+            self.apply_cutoffs(data)
 
-        auc_scores = self.calculate_auc()
+        auc_scores = self.calculate_auc(data)
         metrics = {}
         for cat in ["ALL", "AML", "APL"]:
-            if is_cutoff:
-                cond = self.data[f"confident.{cat}"] == "Confident"
-            else:
-                cond = pd.Series([True] * len(self.data), index=self.data.index)
-
-            y_true = self.data["class"] == cat
+            cond = (
+                data[f"confident.{cat}"] == "Confident"
+                if is_cutoff
+                else pd.Series([True] * len(data), index=data.index)
+            )
+            y_true = data["class"] == cat
             y_pred = cond
 
             true_positives = np.sum(y_true & y_pred)
             true_negatives = np.sum(~y_true & ~y_pred)
             false_positives = np.sum(~y_true & y_pred)
-            false_negatives = np.sum(y_true & ~y_pred)
+            false_negatives = np.sum(y_true & y_pred)
 
             precision = (
                 true_positives / (true_positives + false_positives)
@@ -97,15 +104,45 @@ class LeukemiaModelEvaluator:
 
             metrics[cat] = {
                 "AUC": auc_scores[cat],
-                "Accuracy": (true_positives + true_negatives) / len(self.data),
+                "Accuracy": (true_positives + true_negatives) / len(data),
                 "Precision": precision,
                 "Recall": recall,
                 "F1 Score": f1,
             }
         return metrics
 
-    def summarize_results(self, is_cutoff=False):
-        return self.calculate_metrics(is_cutoff=is_cutoff)
+    def bootstrap_metrics(self, is_cutoff, iterations=1000, confidence_level=0.95):
+        results = {
+            cat: {
+                metric: []
+                for metric in ["AUC", "Accuracy", "Precision", "Recall", "F1 Score"]
+            }
+            for cat in ["ALL", "AML", "APL"]
+        }
+
+        for _ in range(iterations):
+            sampled_data = resample(self.data)
+            metrics = self.calculate_metrics(sampled_data, is_cutoff)
+
+            for cat in metrics:
+                for metric in metrics[cat]:
+                    results[cat][metric].append(metrics[cat][metric])
+
+        # Compute mean, CI lower and CI upper for each metric
+        final_results = {}
+        for cat, metrics in results.items():
+            final_results[cat] = {}
+            for metric, values in metrics.items():
+                mean_val = np.mean(values)
+                std_dev = np.std(values)
+                ci_width = norm.ppf((1 + confidence_level) / 2) * (
+                    std_dev / np.sqrt(iterations)
+                )
+                ci_lower = mean_val - ci_width
+                ci_upper = mean_val + ci_width
+                final_results[cat][metric] = (mean_val, ci_lower, ci_upper)
+
+        return final_results
 
     def prediction_data_pruner(self, threshold=0):
         # prune na values, more than threshold percentage of na values must be present in a row
@@ -128,14 +165,21 @@ class LeukemiaModelEvaluator:
 def main(config):
     init_wandb(config)
     data = pd.read_csv(config["task_dir"] / "predict.csv")
-    evaluator = LeukemiaModelEvaluator(data, config)
-    evaluator.prediction_data_pruner(threshold=0.4)
-    results = evaluator.summarize_results(is_cutoff=False)
-    logging.info(f"Results without applying cutoffs: {results}")
-    evaluator.log_to_wandb(results, phase="No Cutoffs")
-    results = evaluator.summarize_results(is_cutoff=True)
-    logging.info(f"Results after applying cutoffs: {results}")
-    evaluator.log_to_wandb(results, phase="Cutoffs")
+
+    data_pediatric = data.where(data["age"] < 18).dropna(subset=["age"])
+    data_adults = data.where(data["age"] >= 18).dropna(subset=["age"])
+
+    ds_dict = {"kids": data_pediatric, "adults": data_adults}
+
+    for ds_name, ds in ds_dict.items():
+        evaluator = LeukemiaModelEvaluator(ds, config, ds_name)
+        evaluator.prediction_data_pruner(threshold=0.2)
+        results = evaluator.bootstrap_metrics(is_cutoff=False)
+        logging.info(f"Results without applying cutoffs: {results}")
+        evaluator.log_to_wandb(results, phase=f"No Cutoffs - {ds_name}")
+        results = evaluator.bootstrap_metrics(is_cutoff=True)
+        logging.info(f"Results after applying cutoffs: {results}")
+        evaluator.log_to_wandb(results, phase=f"Cutoffs - {ds_name}")
 
 
 if __name__ == "__main__":

@@ -120,6 +120,31 @@ class FHIRFilter:
 
         store_df(pats_cond, output_path)
 
+    @staticmethod
+    def merge_quivalent_codes(df: pd.DataFrame, merge_codes: dict) -> pd.DataFrame:
+        for enc in df["encounter_id"].unique():
+            enc_df = df[df["encounter_id"] == enc]
+
+            # Iterate over each set of merge codes
+            for merge_key, alternative_codes in merge_codes.items():
+                if merge_key not in enc_df["code"].values:
+                    alternative_df = enc_df[
+                        enc_df["code"].isin(alternative_codes)
+                    ].sort_values("effectiveDateTime")
+                    if not alternative_df.empty:
+                        earliest_alternative = alternative_df.iloc[0]
+                        # Assign the earliest alternative value to the primary key
+                        df.loc[
+                            (df["encounter_id"] == enc)
+                            & (df["code"] == earliest_alternative["code"]),
+                            "code",
+                        ] = merge_key
+                        logger.info(
+                            f"Replaced {earliest_alternative['code']} with {merge_key} for encounter {enc}"
+                        )
+
+        return df
+
     def filter_observation(self):
         output_path = self.config["task_dir"] / f"observation{OUTPUT_FORMAT}"
         obs = self.basic_filtering("observation", save=False)
@@ -144,6 +169,9 @@ class FHIRFilter:
         # Concatenate all the DataFrames in the list, if the list is not empty
         if all_first_obs:
             obs_by_enc = pd.concat(all_first_obs).reset_index(drop=True)
+            obs_by_enc = self.merge_quivalent_codes(
+                obs_by_enc, self.config["merge_codes"]
+            )
             df_obs = self.observations_to_si(obs_by_enc)
             store_df(df_obs, output_path)
         else:
