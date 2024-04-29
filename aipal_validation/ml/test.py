@@ -30,8 +30,8 @@ class LeukemiaModelEvaluator:
                 wandb_table.add_data(
                     cat,
                     metric,
-                    mean_val,
-                    f"[{np.round(ci_lower, 2)}, {np.round(ci_upper, 2)}]",
+                    np.round(mean_val, 3),
+                    f"[{np.round(ci_lower, 3)}, {np.round(ci_upper, 3)}]",
                 )
 
         wandb.log({f"{phase} Metrics": wandb_table})

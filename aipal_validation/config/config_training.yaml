@@ -18,7 +18,7 @@ skip_validation: False
 LK_codes: {
     "ALL": ['C91.00', 'C91.30', 'C91.50', 'C91.60', 'C91.80', 'C91.90'],
     "AML": ['C92.00', 'C92.50', 'C92.60', 'C92.70', 'C92.80', 'C92.90'],
-    "PCL": ['C92.40']
+    "APL": ['C92.40']
 }
 
 # unit siwsslab to si
