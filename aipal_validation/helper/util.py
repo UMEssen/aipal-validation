@@ -94,20 +94,31 @@ def clear_process_data(config):
                 logger.info("Failed to delete %s. Reason: %s" % (file_path, e))
 
 
-def run_r_script():
+def run_r_script(config):
     try:
-        # Path to the R script
-        r_script_path = "r/predict.R"
+        # check for predict.csv existance
+        if (
+            os.path.exists(config["task_dir"] / Path("predict.csv"))
+            and not config["rerun_cache"]
+        ):
+            logging.info(
+                "Predictions already exist in predict.csv. Skipping R script execution."
+            )
+            return
+        else:
+            logging.info("Running R script to generate predictions.")
+            # Path to the R script
+            r_script_path = "r/predict.R"
 
-        # Command to run the R script
-        command = ["Rscript", r_script_path]
+            # Command to run the R script
+            command = ["Rscript", r_script_path]
 
-        # Running the command
-        result = subprocess.run(command, capture_output=True, text=True, check=True)
+            # Running the command
+            result = subprocess.run(command, capture_output=True, text=True, check=True)
 
-        # Correctly formatted logging output
-        logging.info("R script output: %s", result.stdout)
-        logging.info("R script errors: %s", result.stderr)
+            # Correctly formatted logging output
+            logging.info("R script output: %s", result.stdout)
+            logging.info("R script errors: %s", result.stderr)
 
     except subprocess.CalledProcessError as e:
         # Correctly formatted logging error

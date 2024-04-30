@@ -122,5 +122,5 @@ def run():
             pickle.dump(config, of)
 
     if "test" in config["step"]:
-        run_r_script()
+        run_r_script(config)
         test.main(config)
