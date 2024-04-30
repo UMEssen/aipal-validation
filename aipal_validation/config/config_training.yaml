@@ -3,7 +3,7 @@ task: aipal
 debug: False
 
 # General params for setting the folders and the extraction
-run_id: "V1"
+run_id: "V2"
 
 root_dir: "/data"
 step: "all"

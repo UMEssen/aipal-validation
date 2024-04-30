@@ -71,5 +71,4 @@ def main(config):
     df_merged = merge_pats_conds_obs(config, df_obs)
     df = condition_to_codes(config, df_merged)
     df = calculate_age(df, "birth_date")
-    df = df.round(2)
     store_df(df, config["task_dir"] / "samples.csv", "samples")

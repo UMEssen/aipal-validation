@@ -186,7 +186,12 @@ class FHIRExtractor:
         )
         pats_cond_ids = "', '".join(pats_cond["encounter_id"].unique().tolist())
         obs_codes_str = "', '".join(list(self.config["obs_codes_si"].keys()))
-        obs_codes_str += "', '".join(list(self.config["merge_codes"].values()))
+        obs_codes_str += "', '".join(
+            [
+                ", ".join(map(str, v)) if isinstance(v, list) else str(v)
+                for v in self.config["merge_codes"].values()
+            ]
+        )
         self.default_metrics_extraction(
             output_name="observation",
             query=f"""
@@ -218,7 +223,6 @@ class FHIRExtractor:
             item for sublist in self.config["LK_codes"].values() for item in sublist
         ]
         Lk_code_values_str = "', '".join(Lk_code_values)
-        # todo remove p1.id to scale
         self.default_metrics_extraction(
             output_name="patient_condition",
             query=f"""
@@ -248,6 +252,5 @@ class FHIRExtractor:
                         encounter_period ep1 ON ep1._resource = e1._id
                     WHERE
                         fhirql_code(ccc0.code) IN ('{Lk_code_values_str}')
-                    limit 10000
                     """,
         )
