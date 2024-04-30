@@ -4,6 +4,11 @@ ENV POETRY_HOME=/etc/poetry
 RUN pip3 install poetry
 RUN python3 -m poetry export --without-hashes -f requirements.txt
 
+# Install R
+RUN apt-get update && \
+    apt-get install -y r-base && \
+    rm -rf /var/lib/apt/lists/*
+
 # Install app dependencies
 COPY --from=poetry2requirements /Requirements.txt /tmp
 RUN pip3 install -U pip && \

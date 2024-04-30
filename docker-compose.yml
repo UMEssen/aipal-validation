@@ -32,8 +32,7 @@ services:
       - WANDB_DATA_DIR=/wandb
     volumes:
       - .:/app
-      - /raid/work/merengelke/aipal_validation/wandb:/wandb
-      - /raid/work/merengelke/aipal_validation:/data
+      - /nvme/merengelke/aipal:/data
 
 
 networks:

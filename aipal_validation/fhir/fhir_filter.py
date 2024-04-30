@@ -44,6 +44,7 @@ class FHIRFilter:
         if self.config["rerun_cache"] or not path.exists():
             return False
         else:
+            logging.info(f"Skipping {path.name}")
             return path.exists()
 
     def observations_to_si(self, df_obs: pd.DataFrame) -> pd.DataFrame:
@@ -93,6 +94,11 @@ class FHIRFilter:
         store_df(df, output_path)
 
     def filter_conditions(self) -> None:
+        if self.skip_filter(
+            self.config["task_dir"] / f"patient_condition{OUTPUT_FORMAT}"
+        ):
+            return
+
         output_path = self.config["task_dir"] / f"patient_condition{OUTPUT_FORMAT}"
         enc_pat_cond = self.basic_filtering("patient_condition", save=False)
 
@@ -145,6 +151,9 @@ class FHIRFilter:
         return df
 
     def filter_observation(self):
+        if self.skip_filter(self.config["task_dir"] / f"observation{OUTPUT_FORMAT}"):
+            return
+
         output_path = self.config["task_dir"] / f"observation{OUTPUT_FORMAT}"
         obs = self.basic_filtering("observation", save=False)
         obs = obs.dropna(subset=["effectiveDateTime"])
