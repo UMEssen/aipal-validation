@@ -138,7 +138,7 @@ class FHIRFilter:
                             & (df["code"] == earliest_alternative["code"]),
                             "code",
                         ] = merge_key
-                        logger.info(
+                        logger.debug(
                             f"Replaced {earliest_alternative['code']} with {merge_key} for encounter {enc}"
                         )
 

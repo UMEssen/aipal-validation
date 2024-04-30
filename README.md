@@ -7,7 +7,7 @@ poetry install
 ```
 
 ```
-poetry run aipal_validation --task [pretrain_fhir|pretrain_documents|pretrain_fhir_documents|ds_icd|ds_image|ds_main_diag]
+poetry run aipal_validation --task aipal --step [all,data,sampling,test]
 ```
 
 
@@ -19,12 +19,5 @@ GPUS=0,1,2 docker compose run trainer bash
 
 and inside the docker container
 ```
-python -m aipal_validation --task [pretrain_fhir|pretrain_documents|pretrain_fhir_documents|ds_icd|ds_image|ds_main_diag]
-```
-
-distributed training
-```
-accelerate config --config_file conf.yaml
-accelerate launch --config_file conf.yaml -m \
-    aipal_validation --task [pretrain_fhir|pretrain_documents|pretrain_fhir_documents|ds_icd|ds_image|ds_main_diag]
+python -m aipal_validation --task aipal --step [all,data,sampling,test]
 ```

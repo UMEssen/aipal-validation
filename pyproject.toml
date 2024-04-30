@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "AIPAL_Validation_Pipeline"
+name = "AIPAL_Validation"
 readme = "README.md"
 version = "0.2.0"
 license = "MIT License"
