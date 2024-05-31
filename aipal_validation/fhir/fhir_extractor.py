@@ -185,13 +185,23 @@ class FHIRExtractor:
             self.config["task_dir"] / f"patient_condition{OUTPUT_FORMAT}"
         )
         pats_cond_ids = "', '".join(pats_cond["encounter_id"].unique().tolist())
-        obs_codes_str = "', '".join(list(self.config["obs_codes_si"].keys()))
-        obs_codes_str += "', '".join(
-            [
-                ", ".join(map(str, v)) if isinstance(v, list) else str(v)
-                for v in self.config["merge_codes"].values()
-            ]
+
+        obs_codes_si_str = "', '".join(list(self.config["obs_codes_si"].keys()))
+        if self.config["merge_codes"]:
+            merge_codes_str = ", ".join(
+                [
+                    f"'{element}'"
+                    for value in self.config["merge_codes"].values()
+                    for element in (value if isinstance(value, list) else [value])
+                ]
+            )
+
+        obs_codes_str = (
+            f"'{obs_codes_si_str}', {merge_codes_str}"
+            if merge_codes_str
+            else f"'{obs_codes_si_str}'"
         )
+
         self.default_metrics_extraction(
             output_name="observation",
             query=f"""
@@ -214,7 +224,7 @@ class FHIRExtractor:
                     and oe0._reference_type = 'Encounter'
                 )
             WHERE
-                e1.id IN ('{pats_cond_ids}') and fhirql_code(occ0.code) IN ('{obs_codes_str}')
+                e1.id IN ('{pats_cond_ids}') and fhirql_code(occ0.code) IN ({obs_codes_str})
             """,
         )
 

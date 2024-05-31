@@ -145,10 +145,14 @@ class LeukemiaModelEvaluator:
         return final_results
 
     def prediction_data_pruner(self, threshold=0):
-        # prune na values, more than threshold percentage of na values must be present in a row
+        # Prune rows where the percentage of NaN values is above the threshold
+        # Here, threshold is defined as the maximum allowed percentage of missing values
+
         data = self.data.copy()
         mandatory_columns = [value[3] for value in self.config["obs_codes_si"].values()]
         data["nan_percentage"] = data[mandatory_columns].isna().mean(axis=1)
+
+        # If threshold=0.2, we want at least 80% of data, so we drop rows with >20% missing
         data = data[data["nan_percentage"] <= threshold]
         data.drop(columns=["nan_percentage"], inplace=True)
         logging.info(f"Pruned {len(self.data) - len(data)} rows")
@@ -175,11 +179,15 @@ def main(config):
         evaluator = LeukemiaModelEvaluator(ds, config, ds_name)
         evaluator.prediction_data_pruner(threshold=0.2)
         results = evaluator.bootstrap_metrics(is_cutoff=False)
-        logging.info(f"Results without applying cutoffs: {results}")
-        evaluator.log_to_wandb(results, phase=f"No Cutoffs - {ds_name}")
+        logging.info(f"Results without cutoffs: {results}, {len(ds)} samples")
+        evaluator.log_to_wandb(
+            results, phase=f"No Cutoffs - {ds_name} - {len(ds)} samples"
+        )
         results = evaluator.bootstrap_metrics(is_cutoff=True)
-        logging.info(f"Results after applying cutoffs: {results}")
-        evaluator.log_to_wandb(results, phase=f"Cutoffs - {ds_name}")
+        logging.info(f"Results with cutoffs: {results}, {len(ds)} samples")
+        evaluator.log_to_wandb(
+            results, phase=f"Cutoffs - {ds_name} - {len(ds)} samples"
+        )
 
 
 if __name__ == "__main__":

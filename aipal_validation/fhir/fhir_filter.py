@@ -127,6 +127,17 @@ class FHIRFilter:
 
     @staticmethod
     def merge_quivalent_codes(df: pd.DataFrame, merge_codes: dict) -> pd.DataFrame:
+        """
+        Merge equivalent codes in a DataFrame based on a given dictionary of merge codes. In case key codes are not present.
+
+        Args:
+            df (pd.DataFrame): The DataFrame containing the data to be processed.
+            merge_codes (dict): A dictionary mapping merge keys to lists of alternative codes.
+
+        Returns:
+            pd.DataFrame: The DataFrame with equivalent codes merged.
+
+        """
         for enc in df["encounter_id"].unique():
             enc_df = df[df["encounter_id"] == enc]
 
@@ -147,6 +158,9 @@ class FHIRFilter:
                         logger.debug(
                             f"Replaced {earliest_alternative['code']} with {merge_key} for encounter {enc}"
                         )
+        # Create a list containing only the values from the merge_codes dictionary
+        alt_codes_list = [code for codes in merge_codes.values() for code in codes]
+        df = df[~df["code"].isin(alt_codes_list)]
 
         return df
 
@@ -177,9 +191,10 @@ class FHIRFilter:
         # Concatenate all the DataFrames in the list, if the list is not empty
         if all_first_obs:
             obs_by_enc = pd.concat(all_first_obs).reset_index(drop=True)
-            obs_by_enc = self.merge_quivalent_codes(
-                obs_by_enc, self.config["merge_codes"]
-            )
+            if "merge_codes" in self.config:
+                obs_by_enc = self.merge_quivalent_codes(
+                    obs_by_enc, self.config["merge_codes"]
+                )
             df_obs = self.observations_to_si(obs_by_enc)
             store_df(df_obs, output_path)
         else:
