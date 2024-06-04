@@ -26,10 +26,10 @@ AIPAL Validator is a tool designed to streamline the validation process for [AIP
 
 ## Docker Setup
 
-1. Run the Docker container specifying the GPUs (example uses GPUs 0, 1, 2):
+1. Run the Docker container:
 
     ```bash
-    GPUS=0,1,2 docker compose run trainer bash
+    docker compose run aipal bash
     ```
 
 2. Inside the Docker container, execute the validation script:

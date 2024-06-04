@@ -1,7 +1,7 @@
 version: '2.3' # nvidia-docker2 requires version 2.3 in order to be able to specify the container runtime
 
 services:
-  trainer:
+  aipal:
     build:
       context: .
       dockerfile: "Dockerfile"
@@ -13,7 +13,7 @@ services:
       memlock: -1
       stack: 67108864
     environment:
-      - NVIDIA_VISIBLE_DEVICES=$GPUS
+      - NVIDIA_VISIBLE_DEVICES=0
       - FHIR_USER
       - FHIR_PASSWORD
       - SEARCH_URL
@@ -26,10 +26,10 @@ services:
       - METRICS_PORT
       - METRICS_DB
       - WANDB_API_KEY=$WANDB_API_KEY
-      - WANDB_DIR=/wandb
-      - WANDB_CACHE_DIR=/wandb
-      - WANDB_CONFIG_DIR=/wandb
-      - WANDB_DATA_DIR=/wandb
+      - WANDB_DIR=/data/wandb
+      - WANDB_CACHE_DIR=/data/wandb
+      - WANDB_CONFIG_DIR=/data/wandb
+      - WANDB_DATA_DIR=/data/wandb
     volumes:
       - .:/app
       - /nvme/merengelke/aipal:/data
