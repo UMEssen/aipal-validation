@@ -12,6 +12,7 @@ tmp_nb.ipynb
 aipal_validation/config/config_training.yaml
 jupyter/sampling_test.ipynb
 jupyter/tokenizer_test.ipynb
+jupiter/prediction_analysis.ipynb
 tmp.sh
 aipal_validation/config/config_training.yaml
 .ipynb

@@ -1,9 +1,8 @@
 import os
 
 import numpy as np
-from sklearn.metrics import f1_score, precision_score, recall_score
-
 import wandb
+from sklearn.metrics import f1_score, precision_score, recall_score
 
 
 def get_param_for_task_model(config, param: str, task: str, model: str):
@@ -17,8 +16,8 @@ def get_param_for_task_model(config, param: str, task: str, model: str):
 
 def init_wandb(config):
     wandb.init(
-        tags=["test"],
-        project="aipal_validation_ds",
+        tags=["Essen"],
+        project="aipal_validation",
         mode="disabled" if config["debug"] else "online",
         entity="ship-ai-autopilot",
         config=config,
