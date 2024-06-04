@@ -3,13 +3,10 @@ task: aipal
 debug: False
 
 # General params for setting the folders and the extraction
-run_id: "V2"
+run_id: "V4"
 
 root_dir: "/data"
 step: "all"
-data_id: {
-    "aipal": "V1",
-}
 
 # Enforce run and not read cache
 rerun_cache: False

@@ -75,12 +75,11 @@ def get_column_map_txt_resources(config, resources_for_pre_training):
 def skip_build(config: dict) -> bool:
     if (
         not config["rerun_cache"]
-        and (config["sample_dir"] / "train.jsonl").exists()
-        and (config["sample_dir"] / "test.jsonl").exists()
+        and (config["task_dir"] / "samples.csv").exists()
         and not config["debug"]
     ):
         logger.info(
-            f"Skipping sampling as it already exists in {config['sample_dir']}."
+            f"Skipping sampling as it already exists in {config['task_dir']}/{'samples.csv'}."
         )
         return True
     else:

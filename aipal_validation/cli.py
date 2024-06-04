@@ -93,10 +93,6 @@ def run():
 
     config["task_dir"] = config["root_dir"] / config["task"]
 
-    config["sample_dir"] = (
-        config["task_dir"] / f"sampled_{config['data_id'][config['task']]}"
-    )
-
     if config["step"] == "all":
         config["step"] = "data+sampling+test"
 
