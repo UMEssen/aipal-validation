@@ -198,7 +198,6 @@ def main(config):
         ds = evaluator.prediction_data_pruner(threshold=0.2)
 
         results = evaluator.bootstrap_metrics(cutoff_type="")
-        wandb.Table(dataframe=ds)
         ds.to_csv(config["task_dir"] / f"{ds_name}_pruned.csv", index=False)
         logging.info(
             f"Results no cutoffs: {ds_name} {results}, {len(ds)} samples classes {ds['class'].value_counts()}"
@@ -208,6 +207,7 @@ def main(config):
         evaluator.log_to_wandb(
             results, phase=f"No Cutoffs - {ds_name} - {len(ds)} samples: {class_counts}"
         )
+
         # cutoff_type = ["ACC", "PPV", "NPV"]
         cutoff_type = ["ACC"]
         for c_type in cutoff_type:
@@ -217,7 +217,7 @@ def main(config):
             )
             evaluator.log_to_wandb(
                 results,
-                phase=f"No Cutoffs - {ds_name} - {len(ds)} samples: {class_counts}",
+                phase=f"Cutoffs - {ds_name} - {len(ds)} samples: {class_counts}",
             )
 
 
