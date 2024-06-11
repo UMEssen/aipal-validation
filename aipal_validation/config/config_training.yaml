@@ -3,7 +3,7 @@ task: aipal
 debug: False
 
 # General params for setting the folders and the extraction
-run_id: "V4"
+run_id: "V5"
 
 root_dir: "/data"
 step: "all"
@@ -17,6 +17,9 @@ LK_codes: {
     "AML": ['C92.00', 'C92.50', 'C92.60', 'C92.70', 'C92.80', 'C92.90'],
     "APL": ['C92.40']
 }
+
+# Procedures which need to be filterd within a encounter so that we are sure that the patient has no been classified
+excluded_procedure_codes: ['8-860', '8-863']
 
 # unit siwsslab to si
 # siwsslab_label: [unit, factor, si_unit, aipal_label]

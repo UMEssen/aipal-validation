@@ -50,6 +50,12 @@ class FHIRExtractor:
         else:
             raise NotImplementedError(f"Resource {resource} not supported")
 
+    def build_refine(self, resource: str, df_thats_to_refine: pd.DataFrame):
+        if resource == "encounter_procedure":
+            self.refine_encounter_by_procedure(df_thats_to_refine)
+        else:
+            raise NotImplementedError(f"Resource {resource} not supported")
+
     @timed
     def df_from_query(self, query: str, chunk_size: int = 1000) -> pd.DataFrame:
         query_all = query.strip()
@@ -263,4 +269,35 @@ class FHIRExtractor:
                     WHERE
                         fhirql_code(ccc0.code) IN ('{Lk_code_values_str}')
                     """,
+        )
+
+    def refine_encounter_by_procedure(self, df_enc):
+        encounter_ids = df_enc.encounter_id.unique()
+        like_conditions = " OR ".join(
+            [
+                f"fhirql_code(pcc0.code) LIKE '{code}%'"
+                for code in self.config["excluded_procedure_codes"]
+            ]
+        )
+
+        self.default_metrics_extraction(
+            output_name="encounter_procedure",
+            query=f"""
+        SELECT
+            fhirql_code (pcc0.code) "pcc0_code",
+            p0.id "procedure_id",
+            e1.id "encounter_id"
+        FROM
+            procedure p0
+            JOIN procedure_code pc0 ON (pc0._resource = p0._id)
+            JOIN procedure_code_coding pcc0 ON (pcc0._resource = p0._id)
+            JOIN procedure_encounter pe0 ON (pe0._resource = p0._id)
+            JOIN encounter e1 ON (
+            e1._id = pe0._reference_id
+            and pe0._reference_type = 'Encounter'
+            )
+        WHERE
+            e1.id in ('{"', '".join(encounter_ids)}') and
+            ({like_conditions})
+        """,
         )

@@ -59,7 +59,7 @@ def parse_args_local(config) -> argparse.Namespace:
         "--task",
         type=str,
         default=config["task"],
-        required=True,
+        required=False,
     )
     parser.add_argument(
         "--debug",

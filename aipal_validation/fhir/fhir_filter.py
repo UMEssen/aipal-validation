@@ -6,6 +6,7 @@ from typing import Optional
 import pandas as pd
 from tqdm import tqdm
 
+from aipal_validation.fhir.fhir_extractor import FHIRExtractor
 from aipal_validation.fhir.util import (
     OUTPUT_FORMAT,
     check_and_read,
@@ -123,7 +124,25 @@ class FHIRFilter:
             pats_cond["condition_codes"], set_to_none=True
         )
 
-        store_df(pats_cond, output_path)
+        refine = FHIRExtractor(self.config)
+        refine.build_refine("encounter_procedure", pats_cond)
+        pro_enc = check_and_read(
+            self.config["data_dir"] / f"encounter_procedure{OUTPUT_FORMAT}"
+        )
+
+        # group by encounter_id and take only first procedure
+        pro_enc = pro_enc.groupby("encounter_id").first().reset_index()
+
+        logging.info(f"Number of entries before filtering: {len(pats_cond)}")
+        logging.info(
+            f"Intersection {set(pats_cond.encounter_id.unique()).intersection(set(pro_enc.encounter_id.unique()))}"
+        )
+        pats_cond_final = pats_cond[
+            ~pats_cond["encounter_id"].isin(pro_enc["encounter_id"])
+        ]
+        logging.info(f"Number of entries after filtering: {len(pats_cond_final)}")
+
+        store_df(pats_cond_final, output_path)
 
     @staticmethod
     def merge_quivalent_codes(df: pd.DataFrame, merge_codes: dict) -> pd.DataFrame:
