@@ -36,8 +36,8 @@ class LeukemiaModelEvaluator:
         wandb.log({f"{phase}": wandb_table})
 
     def calculate_auc(self, data):
+        # todo fix bug
         classes = ["ALL", "AML", "APL"]
-        # one vs all fastion
         y_true = label_binarize(data["class"], classes=classes)
         auc_scores = {}
 
@@ -51,45 +51,52 @@ class LeukemiaModelEvaluator:
                 auc_scores[cat] = roc_auc_score(y_true[:, i], y_score)
         return auc_scores
 
-    def apply_cutoffs(self, data, cutoff_type: str):
+    def apply_cutoffs(self, data, cutoff_type):
+        """Apply different cutoff types based on the configuration for confident and overall predictions."""
         for cat in ["ALL", "AML", "APL"]:
             cutoff = self.cutoffs[cat]
-            cutoff_fl = cutoff[cutoff_type]
+            if cutoff_type == "overall cutoff":
+                cutoff_value = cutoff["ACC"]
+            elif cutoff_type in ["confident cutoff"]:
+                cutoff_value = cutoff["PPV"]
+            elif cutoff_type in ["confident not cutoff"]:
+                cutoff_value = cutoff["NPV"]
 
-            # Confident predictions are TRUE
-            # Non-confident predictions are FALSE
-            # "The PPV was then shown for the predicted category, and the NPV for the excluded categories."
-            if cutoff_type == "PPV" or cutoff_type == "ACC":
-                data[f"confident.{cat}"] = data[f"prediction.{cat}"].apply(
-                    lambda x: (True if x >= cutoff_fl else False)
+            if cutoff_type in ["overall cutoff", "confident cutoff"]:
+                data[f"{cutoff_type}.{cat}"] = data[f"prediction.{cat}"].apply(
+                    lambda x: (True if x >= cutoff_value else False)
                 )
-            elif cutoff_type == "NPV":
-                data[f"confident.{cat}"] = data[f"prediction.{cat}"].apply(
-                    lambda x: (True if x < cutoff_fl else False)
+            elif cutoff_type in ["confident not cutoff"]:
+                data[f"{cutoff_type}.{cat}"] = data[f"prediction.{cat}"].apply(
+                    lambda x: (True if x < cutoff_value else False)
                 )
-            else:
-                raise ValueError(f"Invalid cutoff type: {cutoff_type}")
         return data
 
-    def calculate_metrics(self, data, cutoff_type: str):
-
-        if cutoff_type:
+    def calculate_metrics(self, data, cutoff_type):
+        if cutoff_type in [
+            "overall cutoff",
+            "confident cutoff",
+            "confident not cutoff",
+        ]:
+            """Calculate performance metrics based on different cutoffs."""
             data = self.apply_cutoffs(data, cutoff_type)
-            confident_columns = [f"confident.{cat}" for cat in ["ALL", "AML", "APL"]]
-            # check if any of the confident columns are True then take the column name as predicted class
+            confident_columns = [
+                f"{cutoff_type}.{cat}" for cat in ["ALL", "AML", "APL"]
+            ]
             data["predicted_class"] = (
                 data[confident_columns]
                 .idxmax(axis=1)
-                .str.replace("confident.", "", regex=True)
+                .str.replace(f"{cutoff_type}.", "", regex=True)
             )
-
-        else:
+        elif cutoff_type == "no cutoff":
             prediction_columns = [f"prediction.{cat}" for cat in ["ALL", "AML", "APL"]]
             data["predicted_class"] = (
                 data[prediction_columns]
                 .idxmax(axis=1)
                 .str.replace("prediction.", "", regex=True)
             )
+        else:
+            raise ValueError(f"Invalid cutoff type: {cutoff_type}")
 
         auc_scores = self.calculate_auc(data)
         metrics = {}
@@ -145,7 +152,7 @@ class LeukemiaModelEvaluator:
                 for metric in metrics[cat]:
                     results[cat][metric].append(metrics[cat][metric])
 
-        # Compute mean, CI lower and CI upper for each metric
+        # Compute mean, CI lower, and CI upper for each metric
         final_results = {}
         for cat, metrics in results.items():
             final_results[cat] = {}
@@ -162,14 +169,12 @@ class LeukemiaModelEvaluator:
         return final_results
 
     def prediction_data_pruner(self, threshold=0):
-        # Prune rows where the percentage of NaN values is above the threshold
-        # Here, threshold is defined as the maximum allowed percentage of missing values
-
+        """Remove data rows based on the threshold of missing values."""
         data = self.data.copy()
         mandatory_columns = [value[3] for value in self.config["obs_codes_si"].values()]
         data["nan_percentage"] = data[mandatory_columns].isna().mean(axis=1)
 
-        # If threshold=0.2, we want at least 80% of data, so we drop rows with >20% missing
+        # Prune data where the percentage of NaN values is above the threshold
         data = data[data["nan_percentage"] <= threshold]
         data.drop(columns=["nan_percentage"], inplace=True)
         logging.info(f"Pruned {len(self.data) - len(data)} rows")
@@ -187,7 +192,6 @@ class LeukemiaModelEvaluator:
 def main(config):
     init_wandb(config)
     data = pd.read_csv(config["task_dir"] / "predict.csv")
-
     data_pediatric = data.where(data["age"] < 18).dropna(subset=["age"])
     data_adults = data.where(data["age"] >= 18).dropna(subset=["age"])
 
@@ -197,29 +201,37 @@ def main(config):
         evaluator = LeukemiaModelEvaluator(ds, config, ds_name)
         ds = evaluator.prediction_data_pruner(threshold=0.2)
 
-        results = evaluator.bootstrap_metrics(cutoff_type="")
+        results = evaluator.bootstrap_metrics("no cutoff")
         ds.to_csv(config["task_dir"] / f"{ds_name}_pruned.csv", index=False)
         logging.info(
-            f"Results no cutoffs: {ds_name} {results}, {len(ds)} samples classes {ds['class'].value_counts()}"
+            f"Results no cutoff: {ds_name} {results}, {len(ds)} samples classes {ds['class'].value_counts()}"
         )
-        class_counts = ds["class"].value_counts().to_string().replace("\n", ", ")
-
         evaluator.log_to_wandb(
-            results, phase=f"No Cutoffs - {ds_name} - {len(ds)} samples: {class_counts}"
+            results, phase=f"No Cutoff - {ds_name} - {len(ds)} samples"
         )
 
-        # cutoff_type = ["ACC", "PPV", "NPV"]
-        cutoff_type = ["ACC"]
-        for c_type in cutoff_type:
-            results = evaluator.bootstrap_metrics(c_type)
-            logging.info(
-                f"Results cutoffs:{cutoff_type} - {ds_name}, {results}, {len(ds)} samples"
-            )
-            evaluator.log_to_wandb(
-                results,
-                phase=f"Cutoffs - {ds_name} - {len(ds)} samples: {class_counts}",
-            )
+        results = evaluator.bootstrap_metrics("overall cutoff")
+        logging.info(
+            f"Results overall cutoff: {ds_name} {results}, {len(ds)} samples classes {ds['class'].value_counts()}"
+        )
+        evaluator.log_to_wandb(
+            results, phase=f"Overall Cutoff - {ds_name} - {len(ds)} samples"
+        )
 
+        results = evaluator.bootstrap_metrics("confident cutoff")
+        logging.info(
+            f"Results confident cutoff: {ds_name} {results}, {len(ds)} samples classes {ds['class'].value_counts()}"
+        )
+        # True positives are certain to be true
+        evaluator.log_to_wandb(
+            results, phase=f"Confident Cutoff - {ds_name} - {len(ds)} samples"
+        )
 
-if __name__ == "__main__":
-    main()
+        results = evaluator.bootstrap_metrics("confident not cutoff")
+        logging.info(
+            f"Results confident cutoff: {ds_name} {results}, {len(ds)} samples classes {ds['class'].value_counts()}"
+        )
+        # True negatives are certain to be true
+        evaluator.log_to_wandb(
+            results, phase=f"Confident NOT Cutoff - {ds_name} - {len(ds)} samples"
+        )
