@@ -195,7 +195,11 @@ def main(config):
     data_pediatric = data.where(data["age"] < 18).dropna(subset=["age"])
     data_adults = data.where(data["age"] >= 18).dropna(subset=["age"])
 
-    ds_dict = {"kids": data_pediatric, "adults": data_adults}
+    if len(data_pediatric) <= 10:
+        logging.warning(f"Only {len(data_pediatric)} pediatric samples, skipping...")
+        ds_dict = {"adults": data_adults}
+    else:
+        ds_dict = {"kids": data_pediatric, "adults": data_adults}
 
     for ds_name, ds in ds_dict.items():
         evaluator = LeukemiaModelEvaluator(ds, config, ds_name)
@@ -203,35 +207,30 @@ def main(config):
 
         results = evaluator.bootstrap_metrics("no cutoff")
         ds.to_csv(config["task_dir"] / f"{ds_name}_pruned.csv", index=False)
-        logging.info(
-            f"Results no cutoff: {ds_name} {results}, {len(ds)} samples classes {ds['class'].value_counts()}"
+        ds_counts = (
+            ds["class"]
+            .value_counts()
+            .to_string()
+            .strip()
+            .replace("\n", "  ")
+            .replace("   ", ":")
         )
-        evaluator.log_to_wandb(
-            results, phase=f"No Cutoff - {ds_name} - {len(ds)} samples"
-        )
+        lg_string = f"{ds_name}/{config['run_id']} {results}, {len(ds)} samples classes {ds_counts}"
+        tbl_string = f"{ds_name}/{config['run_id']} - {len(ds)}: {ds_counts}"
+
+        logging.info(f"Results no cutoff: {lg_string}")
+        evaluator.log_to_wandb(results, phase=f"No Cutoff - {tbl_string}")
 
         results = evaluator.bootstrap_metrics("overall cutoff")
-        logging.info(
-            f"Results overall cutoff: {ds_name} {results}, {len(ds)} samples classes {ds['class'].value_counts()}"
-        )
-        evaluator.log_to_wandb(
-            results, phase=f"Overall Cutoff - {ds_name} - {len(ds)} samples"
-        )
+        logging.info(f"Results overall cutoff: {lg_string}")
+        evaluator.log_to_wandb(results, phase=f"Overall Cutoff - {tbl_string}")
 
         results = evaluator.bootstrap_metrics("confident cutoff")
-        logging.info(
-            f"Results confident cutoff: {ds_name} {results}, {len(ds)} samples classes {ds['class'].value_counts()}"
-        )
+        logging.info(f"Results confident cutoff: {lg_string}")
         # True positives are certain to be true
-        evaluator.log_to_wandb(
-            results, phase=f"Confident Cutoff - {ds_name} - {len(ds)} samples"
-        )
+        evaluator.log_to_wandb(results, phase=f"Confident Cutoff - {tbl_string}")
 
         results = evaluator.bootstrap_metrics("confident not cutoff")
-        logging.info(
-            f"Results confident cutoff: {ds_name} {results}, {len(ds)} samples classes {ds['class'].value_counts()}"
-        )
+        logging.info(f"Results confident cutoff: {lg_string}")
         # True negatives are certain to be true
-        evaluator.log_to_wandb(
-            results, phase=f"Confident NOT Cutoff - {ds_name} - {len(ds)} samples"
-        )
+        evaluator.log_to_wandb(results, phase=f"Confident NOT Cutoff - {tbl_string}")

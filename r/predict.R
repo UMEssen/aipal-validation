@@ -41,4 +41,5 @@ predict_type <- function(new_data) {
 new_data$prediction <- predict_type(new_data)
 
 # Save new_data with predictions to a new CSV file
+print(paste0("Saving predictions to ", working_dir, "/predict.csv"))
 write.csv(new_data, file = paste0(working_dir, "/predict.csv"), row.names = FALSE)

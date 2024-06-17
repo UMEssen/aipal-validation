@@ -5,13 +5,20 @@ from pathlib import Path
 
 import yaml
 
-from aipal_validation.data_preprocessing import generate_samples
+from aipal_validation.data_preprocessing import (
+    generate_custom_samples,
+    generate_samples,
+)
 from aipal_validation.fhir import FHIRExtractor, FHIRFilter, FHIRValidator
 from aipal_validation.helper.util import is_main_process, run_r_script, timed
 from aipal_validation.ml import test
 
 pipelines = {
-    "aipal": {"generate": generate_samples.main, "test": test.main},
+    "aipal": {
+        "generate": generate_samples.main,
+        "generate_custom": generate_custom_samples.main,
+        "test": test.main,
+    },
 }
 
 
@@ -71,7 +78,6 @@ def parse_args_local(config) -> argparse.Namespace:
         type=str,
         default="all",
     )
-    parser.add_argument("--run_name", type=str, default=None)
 
     return parser.parse_args()
 
@@ -90,32 +96,48 @@ def run():
     config["root_dir"] = config["root_dir"] / config["run_id"]
     config["data_dir"] = config["root_dir"] / "data_raw"
     config["data_dir"].mkdir(parents=True, exist_ok=True)
-
     config["task_dir"] = config["root_dir"] / config["task"]
-
-    if config["step"] == "all":
-        config["step"] = "data+sampling+test"
-
-    config["step"] = config["step"].split("+")
-
-    if "data" in config["step"] and is_main_process():
-        build_cache(config)
-        with (config["task_dir"] / "config_data.pkl").open("wb") as of:
-            pickle.dump(config, of)
-
-    assert config["task"] in pipelines, f"Task {config['task']} not found."
-
     config["task_dir"].mkdir(parents=True, exist_ok=True)
     logger.info(f"The outputs will be stored in {config['task_dir']}.")
 
-    if "sampling" in config["step"] and is_main_process():
-        if isinstance(pipelines[config["task"]]["generate"], list):
-            for pipeline in pipelines[config["task"]]["generate"]:
-                pipeline(config)
-        else:
-            pipelines[config["task"]]["generate"](config)
-        with (config["task_dir"] / "config_sampling.pkl").open("wb") as of:
-            pickle.dump(config, of)
+    fh = logging.FileHandler(config["task_dir"] / "log.txt")
+    fh.setLevel(logging.INFO)
+    formatter = logging.Formatter(
+        "%(levelname)s %(asctime)s [%(name)s.%(funcName)s:%(lineno)d]: %(message)s"
+    )
+    fh.setFormatter(formatter)
+    logging.getLogger().addHandler(fh)
+
+    assert config["task"] in pipelines, f"Task {config['task']} not found."
+
+    # UK-Essen generic firemetrics pipeline
+    if config["run_id"].startswith("V"):
+        if config["step"] == "all":
+            config["step"] = "data+sampling+test"
+            config["step"] = config["step"].split("+")
+
+        if "data" in config["step"] and is_main_process():
+            build_cache(config)
+            with (config["task_dir"] / "config_data.pkl").open("wb") as of:
+                pickle.dump(config, of)
+
+        if "sampling" in config["step"] and is_main_process():
+            if isinstance(pipelines[config["task"]]["generate"], list):
+                for pipeline in pipelines[config["task"]]["generate"]:
+                    pipeline(config)
+            else:
+                pipelines[config["task"]]["generate"](config)
+            with (config["task_dir"] / "config_sampling.pkl").open("wb") as of:
+                pickle.dump(config, of)
+    else:
+        # Custom pipeline in case data already exists
+        # Case 1. Italy + Poland - .xlsx file
+        if config["step"] == "all":
+            config["step"] = "sampling+test"
+            config["step"] = config["step"].split("+")
+
+        if "sampling" in config["step"]:
+            pipelines[config["task"]]["generate_custom"](config)
 
     if "test" in config["step"]:
         run_r_script(config)

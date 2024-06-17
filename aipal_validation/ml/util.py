@@ -16,7 +16,7 @@ def get_param_for_task_model(config, param: str, task: str, model: str):
 
 def init_wandb(config):
     wandb.init(
-        tags=["Essen"],
+        tags=[config["run_id"]],
         project="aipal_validation",
         mode="disabled" if config["debug"] else "online",
         entity="ship-ai-autopilot",

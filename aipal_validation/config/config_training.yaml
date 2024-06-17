@@ -3,7 +3,7 @@ task: aipal
 debug: False
 
 # General params for setting the folders and the extraction
-run_id: "V5"
+run_id: "poland"
 
 root_dir: "/data"
 step: "all"
@@ -31,8 +31,32 @@ obs_codes_si:
   zLEUA: ['/nl', 1, '/nl', 'WBC_G_L']
   zFIBRCS: ['mg/dl', 0.01, 'g/l', 'Fibrinogen_g_L']
   zMON#: ['/nl', 1, '/nl', 'Monocytes_G_L']
-  zTHRA: ['/nl', 1, '/nl', 'Platelets_G_L']
+  zTHRA: ['/nl', ±1, '/nl', 'Platelets_G_L']
   zLYM#: ['/nl', 1, '/nl', 'Lymphocytes_G_L']
+
+italy_codes_si : {
+    'MCV (fL)': ['fL', 1, 'fL', 'MCV_fL'],
+    'Prothrombine time (%)': ['%', 1, '%', 'PT_percent'],
+    'LDH (UI/L)': ['U/L', 1, 'U/L', 'LDH_UI_L'],
+    'MCHC (g/L)': ['g/L', 1, 'g/L', 'MCHC_g_L'],
+    'WBC (*103/mm3)': ['*10^3/mm3', 1, '/nl', 'WBC_G_L'],
+    'Fibrinogen (g/L)': ['g/L', 1, 'g/L', 'Fibrinogen_g_L'],
+    'Monocytes (*103/mm3)': ['*10^3/mm3', 1, '/nl', 'Monocytes_G_L'],
+    'Platelets (*103/mm3)': ['*10^3/mm3', 1, '/nl', 'Platelets_G_L'],
+    'Lymphocites (*103/mm3)': ['*10^3/mm3', 1, '/nl', 'Lymphocytes_G_L']
+}
+
+poland_codes_si : {
+    'MCV (fL)': ['fL', 1, 'fL', 'MCV_fL'],
+    'PT (%)': ['%', 1, '%', 'PT_percent'],
+    'LDH (IU/L)': ['U/L', 1, 'U/L', 'LDH_UI_L'],
+    'MCHC, g/dl': ['g/dl', 10, 'g/L', 'MCHC_g_L'],
+    'WBC 10x9/L': ['10^9/L', 1, '/nl', 'WBC_G_L'],
+    'fibrinogen g/L': ['g/L', 1, 'g/L', 'Fibrinogen_g_L'],
+    'monocyte counts (10x9/L)': ['10^9/L', 1, '/nl', 'Monocytes_G_L'],
+    'PLT 10x9/L': ['10^9/L', 1, '/nl', 'Platelets_G_L'],
+    'lymphocyte 10x9/L': ['10^9/L', 1, '/nl', 'Lymphocytes_G_L']
+}
 
 # prereq: codes values are alredy in si units
 merge_codes:
