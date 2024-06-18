@@ -2,15 +2,16 @@
 
 AIPAL Validator is a tool designed to streamline the validation process for [AIPAL](https://github.com/VincentAlcazer/AIPAL). Below you'll find instructions on how to set up and run this validator both locally and with Docker.
 
-## Prerequisites
+
+## Local Setup
+
+### Prerequisites
 
 - **R Installation**: Ensure R is installed on your system. If not, install it using:
 
   ```bash
   sudo apt-get install r-base
   ```
-
-## Local Setup
 
 1. Install the necessary dependencies:
 

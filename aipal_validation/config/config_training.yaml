@@ -31,7 +31,7 @@ obs_codes_si:
   zLEUA: ['/nl', 1, '/nl', 'WBC_G_L']
   zFIBRCS: ['mg/dl', 0.01, 'g/l', 'Fibrinogen_g_L']
   zMON#: ['/nl', 1, '/nl', 'Monocytes_G_L']
-  zTHRA: ['/nl', ±1, '/nl', 'Platelets_G_L']
+  zTHRA: ['/nl', 1, '/nl', 'Platelets_G_L']
   zLYM#: ['/nl', 1, '/nl', 'Lymphocytes_G_L']
 
 italy_codes_si : {
