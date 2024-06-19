@@ -36,7 +36,6 @@ class LeukemiaModelEvaluator:
         wandb.log({f"{phase}": wandb_table})
 
     def calculate_auc(self, data):
-        # todo fix bug
         classes = ["ALL", "AML", "APL"]
         y_true = label_binarize(data["class"], classes=classes)
         auc_scores = {}
