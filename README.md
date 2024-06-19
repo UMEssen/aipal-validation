@@ -1,0 +1,40 @@
+# AIPAL Validator
+
+AIPAL Validator is a tool designed to streamline the validation process for [AIPAL](https://github.com/VincentAlcazer/AIPAL). Below you'll find instructions on how to set up and run this validator both locally and with Docker.
+
+
+## Local Setup
+
+### Prerequisites
+
+- **R Installation**: Ensure R is installed on your system. If not, install it using:
+
+  ```bash
+  sudo apt-get install r-base
+  ```
+
+1. Install the necessary dependencies:
+
+    ```bash
+    poetry install
+    ```
+
+2. Run the validation process. You can specify the step to run (all, data, sampling, test):
+
+    ```bash
+    poetry run aipal_validation --task aipal --step [all,data,sampling,test]
+    ```
+
+## Docker Setup
+
+1. Run the Docker container:
+
+    ```bash
+    docker compose run aipal bash
+    ```
+
+2. Inside the Docker container, execute the validation script:
+
+    ```bash
+    python -m aipal_validation --task aipal --step [all,data,sampling,test]
+    ```
