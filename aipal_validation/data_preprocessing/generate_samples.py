@@ -64,11 +64,35 @@ def merge_pats_conds_obs(config, df_obs):
     return pd.merge(pats_cond, df_obs, on="encounter_id")
 
 
+def merge_equal_obs_codes(config, df):
+    # get colum name
+    keys = config["merge_codes"].keys()
+    column_names = [config["obs_codes_si"][key][3] for key in keys]
+
+    for key in keys:
+        if len(config["merge_codes"][key]) != 1:
+            raise NotImplementedError(f"merge_codes for {key} has more than one value")
+
+    # new dict with column names and merge codes values
+    merge_dict = {
+        column_names[i]: config["merge_codes"][key][0] for i, key in enumerate(keys)
+    }
+    # fill each nan row with the column name of one of the key of merge_dict with the value of the column name of the merge_dict value
+    for index, row in df.iterrows():
+        for key, value in merge_dict.items():
+            if pd.isnull(row[key]):
+                df.at[index, key] = row[value]
+
+    return df
+
+
 def main(config):
     if skip_build(config):
         return
     df_obs = pivot_obs(config)
     df_merged = merge_pats_conds_obs(config, df_obs)
     df = condition_to_codes(config, df_merged)
-    df = calculate_age(df, "birth_date")
+    df_merged_codes = merge_equal_obs_codes(config, df_merged)
+
+    df = calculate_age(df_merged_codes, "birth_date")
     store_df(df, config["task_dir"] / "samples.csv", "samples")
