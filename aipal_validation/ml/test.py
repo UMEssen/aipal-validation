@@ -63,11 +63,11 @@ class LeukemiaModelEvaluator:
 
             if cutoff_type in ["overall cutoff", "confident cutoff"]:
                 data[f"{cutoff_type}.{cat}"] = data[f"prediction.{cat}"].apply(
-                    lambda x: (True if x >= cutoff_value else False)
+                    lambda x: x >= cutoff_value
                 )
             elif cutoff_type in ["confident not cutoff"]:
                 data[f"{cutoff_type}.{cat}"] = data[f"prediction.{cat}"].apply(
-                    lambda x: (True if x < cutoff_value else False)
+                    lambda x: x < cutoff_value
                 )
         return data
 
@@ -144,7 +144,7 @@ class LeukemiaModelEvaluator:
         }
 
         for _ in range(iterations):
-            sampled_data = resample(self.data)
+            sampled_data = resample(self.data, random_state=42)
             metrics = self.calculate_metrics(sampled_data, cutoff_type)
 
             for cat in metrics:
@@ -202,7 +202,7 @@ def main(config):
 
     for ds_name, ds in ds_dict.items():
         evaluator = LeukemiaModelEvaluator(ds, config, ds_name)
-        ds = evaluator.prediction_data_pruner(threshold=0.2)
+        ds = evaluator.prediction_data_pruner(threshold=0)
 
         results = evaluator.bootstrap_metrics("no cutoff")
         ds.to_csv(config["task_dir"] / f"{ds_name}_pruned.csv", index=False)

@@ -83,6 +83,8 @@ def merge_equal_obs_codes(config, df):
             if pd.isnull(row[key]):
                 df.at[index, key] = row[value]
 
+    df.drop(columns=merge_dict.values(), inplace=True)
+
     return df
 
 
