@@ -34,7 +34,18 @@ obs_codes_si:
   zTHRA: ['/nl', 1, '/nl', 'Platelets_G_L']
   zLYM#: ['/nl', 1, '/nl', 'Lymphocytes_G_L']
 
-italy_codes_si : {
+salamanca_codes_si:
+  MCV_fL: ['fl', 1, 'fl', 'MCV_fL']
+  PT_percent: ['%', 1, '%', 'PT_percent']
+  LDH_UI_L: ['U/l', 1, 'U/l', 'LDH_UI_L']
+  MCHC_g_dL: ['g/dl', 10, 'g/l', 'MCHC_g_L']
+  WBC_G_L: ['/nl', 1, '/nl', 'WBC_G_L']
+  Fibrinogen_mg_dL: ['mg/dl', 0.01, 'g/l', 'Fibrinogen_g_L']
+  Monocytes_G_L: ['/nl', 1, '/nl', 'Monocytes_G_L']
+  Platelets_G_L: ['/nl', 1, '/nl', 'Platelets_G_L']
+  Lymphocytes_G_L: ['/nl', 1, '/nl', 'Lymphocytes_G_L']
+
+rome_codes_si : {
     'MCV (fL)': ['fL', 1, 'fL', 'MCV_fL'],
     'Prothrombine time (%)': ['%', 1, '%', 'PT_percent'],
     'LDH (UI/L)': ['U/L', 1, 'U/L', 'LDH_UI_L'],
