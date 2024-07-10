@@ -29,6 +29,10 @@ mypy = "^0.910"
 black = "^22.3.0"
 jupyter = "^1.0.0"
 
+
+[tool.poetry.group.paper.dependencies]
+seaborn = "^0.13.2"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"

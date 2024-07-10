@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+import pandas as pd
 import wandb
 from sklearn.metrics import f1_score, precision_score, recall_score
 
@@ -16,8 +17,9 @@ def get_param_for_task_model(config, param: str, task: str, model: str):
 
 def init_wandb(config):
     wandb.init(
+        name=f"{config['run_id']}-{pd.Timestamp.now().strftime('%m%d')}",
         tags=[config["run_id"]],
-        project="aipal_validation",
+        project="aipal_validation_V2",
         mode="disabled" if config["debug"] else "online",
         entity="ship-ai-autopilot",
         config=config,
