@@ -1,3 +1,6 @@
+import logging
+
+import numpy as np
 import pandas as pd
 
 from aipal_validation.data_preprocessing.util import skip_build
@@ -45,13 +48,19 @@ def df_to_si(df, config):
     return df
 
 
-def parse_to_numeric(df, config, names=None):
+def parse_to_numeric(df, config, names=None, dropna=True):
     column_names = names if names else {v[3] for v in config["obs_codes_si"].values()}
     for col in column_names:
         if col in df.columns:
             df[col] = df[col].astype(str).str.replace(",", ".")
             df[col] = pd.to_numeric(df[col], errors="coerce")
-    df = df.dropna(subset=column_names)
+    logging.info(
+        f"Removed {df.shape[0] - df.dropna(subset=column_names).shape[0]} rows with missing values"
+    )
+    if dropna:
+        df = df.dropna(subset=column_names)
+    else:
+        df = df.fillna(np.nan)
     return df
 
 
@@ -77,6 +86,9 @@ def main(config):
         # df.rename(columns={"Fibrinogen_mg_dL": "Fibrinogen_g_L"}, inplace=True)
         df.rename(columns={"Age": "age"}, inplace=True)
         df.rename(columns={"Class": "class"}, inplace=True)
+    elif config["run_id"] == "turkey":
+        df.rename(columns={"Age": "age"}, inplace=True)
+        df = parse_to_numeric(df, config, dropna=False)
     else:
         raise NotImplementedError(f"Unknown run_id: {config['run_id']}")
 

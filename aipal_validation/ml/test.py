@@ -229,11 +229,16 @@ def main(config):
     data = pd.read_csv(config["task_dir"] / "predict.csv")
     data_pediatric = data[data["age"] < 18].dropna(subset=["age"])
     data_adults = data[data["age"] >= 18].dropna(subset=["age"])
-    ds_dict = (
-        {"kids": data_pediatric, "adults": data_adults}
-        if len(data_pediatric) > 10
-        else {"adults": data_adults}
-    )
+    minimum_cohort_size = 30
+    if (
+        len(data_pediatric) > minimum_cohort_size
+        and len(data_adults) >= minimum_cohort_size
+    ):
+        ds_dict = {"kids": data_pediatric, "adults": data_adults}
+    elif len(data_pediatric) > minimum_cohort_size:
+        ds_dict = {"kids": data_pediatric}
+    elif len(data_adults) >= minimum_cohort_size:
+        ds_dict = {"adults": data_adults}
 
     results_df = pd.DataFrame()
     for ds_name, ds in ds_dict.items():
