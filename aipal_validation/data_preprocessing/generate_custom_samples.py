@@ -55,12 +55,14 @@ def parse_to_numeric(df, config, names=None, dropna=True):
             df[col] = df[col].astype(str).str.replace(",", ".")
             df[col] = pd.to_numeric(df[col], errors="coerce")
     logging.info(
-        f"Removed {df.shape[0] - df.dropna(subset=column_names).shape[0]} rows with missing values"
+        f"Identified {df.shape[0] - df.dropna(subset=column_names).shape[0]} rows with missing values"
     )
     if dropna:
         df = df.dropna(subset=column_names)
+        logging.info(f"Dropped rows with missing values, new shape: {df.shape}")
     else:
         df = df.fillna(np.nan)
+        logging.info(f"Filled missing values with NaN, new shape: {df.shape}")
     return df
 
 
@@ -89,6 +91,12 @@ def main(config):
     elif config["run_id"] == "turkey":
         df.rename(columns={"Age": "age"}, inplace=True)
         df = parse_to_numeric(df, config, dropna=False)
+    elif config["run_id"] == "buenos_aires":
+        print(f"Before parsing: {df.shape}")
+        df["sex"] = df["sex"].str.strip()
+        df["class"] = df["class"].str.strip()
+        df = parse_to_numeric(df, config, dropna=False)
+        df.drop(columns=["Unnamed: 13", "comment"], inplace=True)
     else:
         raise NotImplementedError(f"Unknown run_id: {config['run_id']}")
 
