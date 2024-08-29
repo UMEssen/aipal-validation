@@ -3,7 +3,7 @@ task: aipal
 debug: False
 
 # General params for setting the folders and the extraction
-run_id: "poland"
+run_id: "bochum"
 
 root_dir: "/data"
 step: "all"
@@ -67,6 +67,18 @@ poland_codes_si : {
     'monocyte counts (10x9/L)': ['10^9/L', 1, '/nl', 'Monocytes_G_L'],
     'PLT 10x9/L': ['10^9/L', 1, '/nl', 'Platelets_G_L'],
     'lymphocyte 10x9/L': ['10^9/L', 1, '/nl', 'Lymphocytes_G_L']
+}
+
+suzhou_codes_si : {
+    'MCV_fL(82-100)': ['fL', 1, 'fL', 'MCV_fL'],
+    'PT_%_AVG': ['%', 1, '%', 'PT_percent'], #run with and without AVG
+    'LDH_U/L': ['U/L', 1, 'U/L', 'LDH_UI_L'],
+    'MCHC_g/L': ['g/dl', 10, 'g/L', 'MCHC_g_L'],
+    'WBC_10E9/L': ['10^9/L', 1, '/nl', 'WBC_G_L'],
+    'Fibrinogen_g/L': ['g/L', 1, 'g/L', 'Fibrinogen_g_L'],
+    'Monocytes_10E9/L': ['10^9/L', 1, '/nl', 'Monocytes_G_L'],
+    'Platelets_10E9/L': ['10^9/L', 1, '/nl', 'Platelets_G_L'],
+    'Lymphocytes_10E9/L': ['10^9/L', 1, '/nl', 'Lymphocytes_G_L']
 }
 
 # prereq: codes values are alredy in si units

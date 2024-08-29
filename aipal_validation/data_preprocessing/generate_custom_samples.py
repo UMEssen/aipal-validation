@@ -92,11 +92,20 @@ def main(config):
         df.rename(columns={"Age": "age"}, inplace=True)
         df = parse_to_numeric(df, config, dropna=False)
     elif config["run_id"] == "buenos_aires":
-        print(f"Before parsing: {df.shape}")
         df["sex"] = df["sex"].str.strip()
         df["class"] = df["class"].str.strip()
         df = parse_to_numeric(df, config, dropna=False)
         df.drop(columns=["Unnamed: 13", "comment"], inplace=True)
+    elif config["run_id"] == "kalkutta":
+        df = parse_to_numeric(df, config, dropna=False)
+    elif config["run_id"] == "suzhou":
+        df = df_to_si(df, config)
+        df = parse_to_numeric(df, config, dropna=False)
+        df["PT_%_AVG"] = np.nan
+    elif config["run_id"] == "bochum":
+        df.rename(columns={"Age": "age"}, inplace=True)
+        df = parse_to_numeric(df, config, dropna=False)
+
     else:
         raise NotImplementedError(f"Unknown run_id: {config['run_id']}")
 

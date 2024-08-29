@@ -171,6 +171,9 @@ class LeukemiaModelEvaluator:
         # Apply cutoffs based on the specified type, if applicable
         if cutoff_type != "no cutoff":
             data = self.apply_cutoffs(self.data, cutoff_metric)
+            if data.empty:
+                logging.warning("No data remaining after applying cutoffs")
+                return None
         else:
             data = self.data
 
@@ -259,6 +262,10 @@ def main(config):
                 cutoff_metric,
                 iterations=2000 if not config["debug"] else 1,
             )
+
+            if results is None:
+                continue
+
             logging.info(
                 f"AUC Scores {ds_name} ALL: {results['ALL']['AUC'][0]}, AML: {results['AML']['AUC'][0]}, APL: {results['APL']['AUC'][0]}"
             )
