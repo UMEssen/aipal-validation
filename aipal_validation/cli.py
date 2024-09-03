@@ -78,6 +78,12 @@ def parse_args_local(config) -> argparse.Namespace:
         type=str,
         default="all",
     )
+    parser.add_argument(
+        "--eval_all",
+        action="store_true",
+        default=False,
+        help="Evaluate all cohorts in on go plus try to filter outliers",
+    )
 
     return parser.parse_args()
 
@@ -141,4 +147,7 @@ def run():
 
     if "test" in config["step"]:
         run_r_script(config)
+        test.main(config)
+
+    if "eval_all" in config and config["eval_all"]:
         test.main(config)

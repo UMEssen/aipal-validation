@@ -4,7 +4,9 @@ import numpy as np
 import pandas as pd
 import wandb
 from scipy.stats import norm
+from sklearn.ensemble import IsolationForest
 from sklearn.metrics import roc_auc_score
+from sklearn.neighbors import LocalOutlierFactor
 from sklearn.preprocessing import label_binarize
 from sklearn.utils import resample
 
@@ -59,11 +61,46 @@ class LeukemiaModelEvaluator:
         # Extract the max predicted value for each row and the corresponding class
         prediction_columns = [f"prediction.{cat}" for cat in ["ALL", "AML", "APL"]]
 
+        if cutoff_metric == "ISO":  # Apply Isolation Forest and Local Outlier Factor
+            # Drop rows with missing values (or alternatively impute them)
+            features = [
+                "age",
+                "MCV_fL",
+                "PT_percent",
+                "LDH_UI_L",
+                "MCHC_g_L",
+                "WBC_G_L",
+                "Fibrinogen_g_L",
+                "Monocytes_G_L",
+                "Platelets_G_L",
+                "Lymphocytes_G_L",
+                "Monocytes_percent",
+            ]
+            data_cleaned = data.dropna(subset=features).copy()
+
+            # Apply Isolation Forest
+            iso_forest = IsolationForest(contamination=0.1, random_state=42)
+            data_cleaned.loc[:, "outlier_iso"] = iso_forest.fit_predict(
+                data_cleaned[features]
+            )
+
+            # Apply Local Outlier Factor
+            lof = LocalOutlierFactor(n_neighbors=20)
+            data_cleaned.loc[:, "outlier_lof"] = lof.fit_predict(data_cleaned[features])
+
+            # Combine the outlier detections
+            data_cleaned.loc[:, "outlier"] = (
+                (data_cleaned["outlier_iso"] == -1)
+                | (data_cleaned["outlier_lof"] == -1)
+            ).astype(int)
+            data = data_cleaned[data_cleaned["outlier"] == 0]
+            deleted_count = len(data_cleaned) - len(data)
+
         # Apply cutoff based on max predicted class and value, in NPV case, the cutoff is reversed
         if cutoff_metric == "NPV":
             NotImplementedError
 
-        else:
+        if cutoff_metric == "PPV" or cutoff_metric == "ACC":
             data["max_pred_value"] = data[prediction_columns].max(axis=1)
             data["max_pred_class"] = (
                 data[prediction_columns]
@@ -80,13 +117,14 @@ class LeukemiaModelEvaluator:
             data = data[data["above_cutoff"]]
 
             # Clean up temporary columns
+            data = data.copy()
             data.drop(
                 columns=["max_pred_value", "max_pred_class", "above_cutoff"],
                 inplace=True,
             )
 
         # Log the count of deleted rows
-        logging.info(f"Rows deleted: {deleted_count}, metric {cutoff_metric}")
+        logging.info(f"\n\n\nRows deleted: {deleted_count}, metric {cutoff_metric}")
         logging.info(f"Remaining rows: {len(data)}")
 
         return data
@@ -169,13 +207,16 @@ class LeukemiaModelEvaluator:
         }
 
         # Apply cutoffs based on the specified type, if applicable
-        if cutoff_type != "no cutoff":
+        if cutoff_type != "no cutoff" and cutoff_type != "outlier":
             data = self.apply_cutoffs(self.data, cutoff_metric)
             if data.empty:
                 logging.warning("No data remaining after applying cutoffs")
                 return None
+        elif cutoff_type == "outlier":
+            data = self.apply_cutoffs(self.data, cutoff_metric)
         else:
             data = self.data
+            logging.info(f"Shape of data: {data.shape}")
 
         wandb.log({"Cohort Size": len(data)})
         wandb.log({"Cohort Distribution": data["class"].value_counts().to_dict()})
@@ -222,14 +263,51 @@ class LeukemiaModelEvaluator:
             "prediction.AML",
             "prediction.APL",
             "class",
+            "age",
         ]
         self.data = data[mandatory_columns]
         return self.data
 
 
 def main(config):
+    # Idea: Run each center seperately and see how the performance varies
+    # Merge all centers and see the performance with no cutoff, over all cutoff, confident cutoff, outlier cutoff
+    # -> Make the predictions more generalizable
     init_wandb(config)
-    data = pd.read_csv(config["task_dir"] / "predict.csv")
+
+    cutoff_dict = {
+        "no cutoff": None,
+        "overall cutoff": "ACC",
+        "confident cutoff": "PPV",
+    }
+
+    if config["eval_all"]:
+        cities_countries = [
+            "poland",
+            "rome",
+            "salamanca",
+            "sao_paulo",
+            "turkey",
+            "buenos_aires",
+        ]
+        root = config["root_dir"].parent
+        paths = [
+            f"{root}/{city_country}/aipal/predict.csv"
+            for city_country in cities_countries
+        ]
+        cutoff_dict.update(
+            {
+                "outlier": "ISO"
+            }  # Currently only IsolationForest + LocalOutlierFactor is supported
+        )
+        data = pd.DataFrame()
+        print(f"Paths: {paths}")
+        for path in paths:
+            df_small = pd.read_csv(path)
+            data = pd.concat([data, df_small])
+
+    else:
+        data = pd.read_csv(config["task_dir"] / "predict.csv")
     data_pediatric = data[data["age"] < 18].dropna(subset=["age"])
     data_adults = data[data["age"] >= 18].dropna(subset=["age"])
     minimum_cohort_size = 30
@@ -249,13 +327,6 @@ def main(config):
         ds = evaluator.prediction_data_pruner(threshold=0.2)
         LeukemiaModelEvaluator.calculate_auc(ds)
 
-        cutoff_dict = {
-            "no cutoff": None,
-            "overall cutoff": "ACC",
-            "confident cutoff": "PPV",
-            # "confident not cutoff": "NPV",
-        }
-
         for cutoff_type, cutoff_metric in cutoff_dict.items():
             results = evaluator.bootstrap_metrics(
                 cutoff_type,
@@ -266,13 +337,19 @@ def main(config):
             if results is None:
                 continue
 
+            logging.info(f"{cutoff_type} - {ds_name}")
+            results_copy = results.copy()
+            # round all numbers to 2 decimals
+            for cat, metrics in results_copy.items():
+                for metric, values in metrics.items():
+                    results_copy[cat][metric] = [round(val, 2) for val in values]
             logging.info(
-                f"AUC Scores {ds_name} ALL: {results['ALL']['AUC'][0]}, AML: {results['AML']['AUC'][0]}, APL: {results['APL']['AUC'][0]}"
+                f"AUC Scores {ds_name} ALL: {results_copy['ALL']['AUC'][0]}, AML: {results_copy['AML']['AUC'][0]}, APL: {results_copy['APL']['AUC'][0]}"
             )
-            logging.info(f"Results {cutoff_type}: {ds_name} {results}")
+            logging.info(f"Results: {results_copy}")
 
             results_dict = {
-                f"{cutoff_type} - {ds_name}": results,
+                f"{cutoff_type} - {ds_name}": results_copy,
             }
             results_df = pd.concat([results_df, pd.DataFrame.from_dict(results_dict)])
 
