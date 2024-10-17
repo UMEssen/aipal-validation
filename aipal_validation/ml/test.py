@@ -132,7 +132,7 @@ class LeukemiaModelEvaluator:
 
         return data
 
-    def calculate_metrics(self, data, cutoff_type):
+    def calculate_metrics(self, data, cutoff_type, min_class_size=10):
         # Calculate AUC scores
         auc_scores = self.calculate_auc(data)
 
@@ -151,6 +151,18 @@ class LeukemiaModelEvaluator:
         for cat in categories:
             y_true = data["class"] == cat
             y_pred = data["predicted_class"] == cat
+            class_size = np.sum(y_true)
+
+            if class_size < min_class_size:
+                metrics[cat] = {
+                    "AUC": float("nan"),
+                    "Accuracy": float("nan"),
+                    "Precision": float("nan"),
+                    "Recall": float("nan"),
+                    "F1 Score": float("nan"),
+                }
+                continue
+
             true_positives = np.sum(y_true & y_pred)
             true_negatives = np.sum(~y_true & ~y_pred)
             false_positives = np.sum(~y_true & y_pred)
