@@ -125,6 +125,9 @@ class LeukemiaModelEvaluator:
 
         # Log the count of deleted rows
         logging.info(f"\n\n\nRows deleted: {deleted_count}, metric {cutoff_metric}")
+        logging.info(
+            f"Class distribution after cutoff: {data['class'].value_counts().to_dict()}"
+        )
         logging.info(f"Remaining rows: {len(data)}")
 
         return data
@@ -249,6 +252,11 @@ class LeukemiaModelEvaluator:
     def prediction_data_pruner(self, threshold=0):
         """Remove data rows based on the threshold of missing values."""
         data = self.data.copy()
+        len_brfore = len(data)
+        logging.info(
+            f"Class distribution before pruning: {data['class'].value_counts().to_dict()}"
+        )
+
         mandatory_columns = [value[3] for value in self.config["obs_codes_si"].values()]
         mandatory_columns += ["Monocytes_percent"]
         data["nan_percentage"] = data[mandatory_columns].isna().mean(axis=1)
@@ -256,7 +264,6 @@ class LeukemiaModelEvaluator:
         # Prune data where the percentage of NaN values is above the threshold
         data = data[data["nan_percentage"] <= threshold]
         data.drop(columns=["nan_percentage"], inplace=True)
-        logging.info(f"Pruned {len(self.data) - len(data)} rows")
 
         mandatory_columns += [
             "prediction.ALL",
@@ -266,6 +273,11 @@ class LeukemiaModelEvaluator:
             "age",
         ]
         self.data = data[mandatory_columns]
+        logging.info(f"Pruned {len_brfore - len(self.data)} rows")
+        logging.info(
+            f"Class distribution after pruning (base cohort): {self.data['class'].value_counts().to_dict()}"
+        )
+
         return self.data
 
 

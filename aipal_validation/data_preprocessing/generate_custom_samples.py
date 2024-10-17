@@ -62,7 +62,7 @@ def parse_to_numeric(df, config, names=None, dropna=True):
         logging.info(f"Dropped rows with missing values, new shape: {df.shape}")
     else:
         df = df.fillna(np.nan)
-        logging.info(f"Filled missing values with NaN, new shape: {df.shape}")
+        logging.info(f"Filled missing values with NaN, shape: {df.shape}")
     return df
 
 
@@ -84,8 +84,6 @@ def main(config):
     elif config["run_id"] == "salamanca":
         df = df_to_si(df, config)  # obs since it is the same as the obs_codes_si
         df.rename(columns={"Gender": "sex"}, inplace=True)
-        # df.rename(columns={"MCHC_g_dL": "MCHC_g_L"}, inplace=True)
-        # df.rename(columns={"Fibrinogen_mg_dL": "Fibrinogen_g_L"}, inplace=True)
         df.rename(columns={"Age": "age"}, inplace=True)
         df.rename(columns={"Class": "class"}, inplace=True)
     elif config["run_id"] == "turkey":
@@ -104,6 +102,8 @@ def main(config):
         df["PT_%_AVG"] = np.nan
     elif config["run_id"] == "bochum":
         df.rename(columns={"Age": "age"}, inplace=True)
+        df = parse_to_numeric(df, config, dropna=False)
+    elif config["run_id"] == "milano":
         df = parse_to_numeric(df, config, dropna=False)
 
     else:
