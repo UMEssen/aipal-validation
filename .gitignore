@@ -19,3 +19,4 @@ aipal_validation/config/config_training.yaml
 jupiter/
 data
 jupyter/tmp.cmd
+aipal_validation.code-workspace
