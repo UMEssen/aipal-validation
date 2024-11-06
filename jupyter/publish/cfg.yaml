@@ -1,0 +1,14 @@
+is_adult: True
+feature_columns: ['Fibrinogen_g_L',
+    'MCV_fL',
+    'Monocytes_percent',
+    'LDH_UI_L',
+    'PT_percent',
+    'MCHC_g_L',
+    'Lymphocytes_G_L',
+    'age',
+    'Monocytes_G_L',
+    'Platelets_G_L']
+# suzhou has MPAL
+cities_countries: ['bochum','poland', 'kalkutta', 'rome', 'salamanca', 'sao_paulo', 'turkey', 'buenos_aires', 'milano']
+continent_mapping: {'bochum': 'europe', 'poland': 'europe', 'kalkutta': 'asia', 'rome': 'europe', 'salamanca': 'europe', 'sao_paulo': 'south_america', 'turkey': 'asia', 'buenos_aires': 'south_america', 'suzhou': 'asia', 'milano': 'europe'}
