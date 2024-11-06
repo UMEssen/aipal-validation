@@ -7,6 +7,16 @@ from aipal_validation.data_preprocessing.util import skip_build
 from aipal_validation.fhir.util import store_df
 
 
+def filter_irrelevant_columns(df, config):
+    obs_codes = {v[3] for v in config["obs_codes_si"].values()}
+    obs_codes.add("age")
+    obs_codes.add("sex")
+    obs_codes.add("class")
+    obs_codes.add("ID")
+    df.drop(columns=[col for col in df.columns if col not in obs_codes], inplace=True)
+    return df
+
+
 def transform_gender_age_class_italy(df) -> pd.DataFrame:
     df["sex"] = df["Gender"].apply(lambda x: "Male" if x == "M" else "Female")
     df["age"] = round(df["Age at diagnosis"], 0).astype(int)
@@ -102,8 +112,10 @@ def main(config):
         df["PT_%_AVG"] = np.nan
     elif config["run_id"] == "bochum":
         df.rename(columns={"Age": "age"}, inplace=True)
+        df["sex"] = df["sex"].apply(lambda x: "Male" if x == "male" else "Female")
         df = parse_to_numeric(df, config, dropna=False)
     elif config["run_id"] == "milano":
+        df["sex"] = df["sex"].apply(lambda x: "Male" if x == "M" else "Female")
         df = parse_to_numeric(df, config, dropna=False)
 
     else:
@@ -114,5 +126,7 @@ def main(config):
         raise ValueError(
             f"Columns {column_names} not found in the data, parsing failed."
         )
+
+    filter_irrelevant_columns(df, config)
 
     store_df(df, config["task_dir"] / "samples.csv")
