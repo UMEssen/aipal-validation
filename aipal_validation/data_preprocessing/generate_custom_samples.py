@@ -42,8 +42,11 @@ def transform_age_diagnosis(df) -> pd.DataFrame:
     return df
 
 
-def df_to_si(df, config):
-    si_dict_key = config["run_id"] + "_codes_si"
+def df_to_si(df, config, dict_key_name=None):
+    if dict_key_name is None:
+        si_dict_key = config["run_id"] + "_codes_si"
+    else:
+        si_dict_key = dict_key_name
     si_dict = config[si_dict_key]
     rename_dict = {k: v[3] for k, v in si_dict.items()}
     multipliers = {k: v[1] for k, v in si_dict.items()}
@@ -64,6 +67,7 @@ def parse_to_numeric(df, config, names=None, dropna=True):
         if col in df.columns:
             df[col] = df[col].astype(str).str.replace(",", ".")
             df[col] = pd.to_numeric(df[col], errors="coerce")
+
     logging.info(
         f"Identified {df.shape[0] - df.dropna(subset=column_names).shape[0]} rows with missing values"
     )
@@ -107,7 +111,10 @@ def main(config):
     elif config["run_id"] == "kalkutta":
         df = parse_to_numeric(df, config, dropna=False)
     elif config["run_id"] == "suzhou":
-        df = df_to_si(df, config)
+        df.columns = df.columns.str.strip()
+        df = df[df["class"] != "MPAL"]
+        df = df[df["class"] != "AUL"]
+        df = df_to_si(df, config, "warsaw_suzhou_codes_si")
         df = parse_to_numeric(df, config, dropna=False)
         df["PT_%_AVG"] = np.nan
     elif config["run_id"] == "bochum":
@@ -117,6 +124,9 @@ def main(config):
     elif config["run_id"] == "milano":
         df["sex"] = df["sex"].apply(lambda x: "Male" if x == "M" else "Female")
         df = parse_to_numeric(df, config, dropna=False)
+    elif config["run_id"] == "warsaw":
+        df.columns = df.columns.str.replace("\n", "").str.strip()
+        df = df_to_si(df, config, "warsaw_suzhou_codes_si")
 
     else:
         raise NotImplementedError(f"Unknown run_id: {config['run_id']}")

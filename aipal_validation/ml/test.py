@@ -132,7 +132,7 @@ class LeukemiaModelEvaluator:
 
         return data
 
-    def calculate_metrics(self, data, cutoff_type, min_class_size=10):
+    def calculate_metrics(self, data, cutoff_type, min_class_size=5):
         # Calculate AUC scores
         auc_scores = self.calculate_auc(data)
 
@@ -295,8 +295,8 @@ class LeukemiaModelEvaluator:
 
 def main(config):
     # Idea: Run each center seperately and see how the performance varies
-    # Merge all centers and see the performance with no cutoff, over all cutoff, confident cutoff, outlier cutoff
-    # -> Make the predictions more generalizable
+    # Minimum cohort size is 30
+    # Minimum class size is 5
     init_wandb(config)
 
     cutoff_dict = {

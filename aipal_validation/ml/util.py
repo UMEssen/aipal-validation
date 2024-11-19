@@ -19,7 +19,7 @@ def init_wandb(config):
     wandb.init(
         name=f"{config['run_id']}-{pd.Timestamp.now().strftime('%m%d')}",
         tags=[config["run_id"]],
-        project="aipal_validation_V2",
+        project="aipal_validation_V3",
         mode="disabled" if config["debug"] else "online",
         entity="ship-ai-autopilot",
         config=config,
