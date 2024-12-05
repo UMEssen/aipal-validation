@@ -3,7 +3,7 @@ task: aipal
 debug: False
 
 # General params for setting the folders and the extraction
-run_id: "bochum"
+run_id: "warsaw"
 
 root_dir: "/data"
 step: "all"
@@ -80,6 +80,17 @@ suzhou_codes_si : {
     'Platelets_10E9/L': ['10^9/L', 1, '/nl', 'Platelets_G_L'],
     'Lymphocytes_10E9/L': ['10^9/L', 1, '/nl', 'Lymphocytes_G_L']
 }
+
+warsaw_suzhou_codes_si:
+  MCV_fL: ['fl', 1, 'fl', 'MCV_fL']
+  PT percent: ['%', 1, '%', 'PT_percent']
+  LDH_IU_L: ['U/l', 1, 'U/l', 'LDH_UI_L']
+  MCHC_g_L: ['g/dl', 1, 'g/l', 'MCHC_g_L']
+  WBC G/L (x10^3 /µl): ['/nl', 1, '/nl', 'WBC_G_L']
+  Fibrinogen_g/L: ['g/L', 1, 'g/l', 'Fibrinogen_g_L']
+  Monocytes G/L (x10^3 /µl): ['/nl', 1, '/nl', 'Monocytes_G_L']
+  Platelets G/L (x10^3 /µl): ['/nl', 1, '/nl', 'Platelets_G_L']
+  Lymphocytes G/L (x10^3 /µl): ['/nl', 1, '/nl', 'Lymphocytes_G_L']
 
 # prereq: codes values are alredy in si units
 merge_codes:
