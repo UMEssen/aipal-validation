@@ -10,5 +10,5 @@ feature_columns: ['Fibrinogen_g_L',
     'Monocytes_G_L',
     'Platelets_G_L']
 # suzhou has MPAL
-cities_countries: ['bochum','poland', 'kalkutta', 'rome', 'salamanca', 'sao_paulo', 'turkey', 'buenos_aires', 'milano']
-continent_mapping: {'bochum': 'europe', 'poland': 'europe', 'kalkutta': 'asia', 'rome': 'europe', 'salamanca': 'europe', 'sao_paulo': 'south_america', 'turkey': 'asia', 'buenos_aires': 'south_america', 'suzhou': 'asia', 'milano': 'europe'}
+cities_countries: ['dallas', 'melbourne', 'maastricht', 'barcelona', 'bochum','warsaw', 'kalkutta', 'rome', 'salamanca', 'sao_paulo', 'turkey', 'buenos_aires', 'milano', 'suzhou']
+continent_mapping: {'dallas': 'north_america', 'melbourne': 'australia', 'maastricht': 'europe', 'barcelona': 'europe', 'Vessen': 'europe', 'bochum': 'europe', 'warsaw': 'europe', 'kalkutta': 'asia', 'rome': 'europe', 'salamanca': 'europe', 'sao_paulo': 'south_america', 'turkey': 'asia', 'buenos_aires': 'south_america', 'suzhou': 'asia', 'milano': 'europe'}

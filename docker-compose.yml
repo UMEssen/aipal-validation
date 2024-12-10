@@ -32,7 +32,7 @@ services:
       - WANDB_DATA_DIR=/data/wandb
     volumes:
       - .:/app
-      - /nvme/merengelke/aipal:/data
+      - /local/work/merengelke/aipal:/data
 
 
 networks:

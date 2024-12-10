@@ -54,7 +54,13 @@ def df_to_si(df, config, dict_key_name=None):
     # Multiply the columns with the corresponding multipliers
     for k, v in multipliers.items():
         if k in df.columns:
-            df[k] = df[k].astype(float) * v
+            # Clean the column values
+            df[k] = df[k].replace("", np.nan)  # Replace empty strings with NaN
+            df[k] = df[k].astype(str).str.replace(",", ".")  # Handle commas as decimals
+            df[k] = pd.to_numeric(
+                df[k], errors="coerce"
+            )  # Convert to numeric, invalid values become NaN
+            df[k] = df[k] * v  # Apply the multiplier
 
     # Change col names to new units
     df.rename(columns=rename_dict, inplace=True)
@@ -80,15 +86,44 @@ def parse_to_numeric(df, config, names=None, dropna=True):
     return df
 
 
+def parse_classes_maastricht(df):
+    df["class"] = df["class"].str.strip()
+
+    valid_classes = ["AML", "APL", "ALL"]
+    df["parsed_class"] = df["class"].apply(
+        lambda x: next((cls for cls in valid_classes if x.endswith(cls)), None)
+    )
+
+    df = df[df["parsed_class"].notna()]
+    df["class"] = df["parsed_class"]
+    df.drop(columns=["parsed_class"], inplace=True)
+
+    return df
+
+
 def main(config):
     if skip_build(config):
         return
     df = pd.read_excel(config["task_dir"] / "data.xlsx")
+    df["class"] = df["class"].str.strip()
+    df.columns = df.columns.str.strip()
 
     # todo make more generic if needed
     if config["run_id"] == "italy" or config["run_id"] == "rome":
         df = transform_gender_age_class_italy(df)
         df = df_to_si(df, config)
+    elif config["run_id"] == "barcelona":
+        print("Barcelona: Nothing to do")
+    elif config["run_id"] == "maastricht":
+        df.dropna(subset=["class"], inplace=True)
+        df = df_to_si(df, config)
+        df = parse_classes_maastricht(df)
+    elif config["run_id"] == "dallas":
+        df = df_to_si(df, config)
+    elif config["run_id"] == "melbourne":
+        df.dropna(subset=["class"], inplace=True)
+        df = df_to_si(df, config)
+        print(df.columns)
     elif config["run_id"] == "poland":
         df = transform_age_diagnosis(df)
         df = df_to_si(df, config)
@@ -96,20 +131,21 @@ def main(config):
         df = parse_to_numeric(df, config)
         df.rename(columns={"Age": "age"}, inplace=True)
     elif config["run_id"] == "salamanca":
-        df = df_to_si(df, config)  # obs since it is the same as the obs_codes_si
-        df.rename(columns={"Gender": "sex"}, inplace=True)
-        df.rename(columns={"Age": "age"}, inplace=True)
-        df.rename(columns={"Class": "class"}, inplace=True)
+        # df = df_to_si(df, config)  # obs since it is the same as the obs_codes_si
+        # df.rename(columns={"Gender": "sex"}, inplace=True)
+        # df.rename(columns={"Age": "age"}, inplace=True)
+        # df.rename(columns={"Class": "class"}, inplace=True)
+        print("Salamanca: Nothing to do")
     elif config["run_id"] == "turkey":
         df.rename(columns={"Age": "age"}, inplace=True)
         df = parse_to_numeric(df, config, dropna=False)
     elif config["run_id"] == "buenos_aires":
-        df["sex"] = df["sex"].str.strip()
-        df["class"] = df["class"].str.strip()
+        df.columns = df.columns.str.strip()
         df = parse_to_numeric(df, config, dropna=False)
-        df.drop(columns=["Unnamed: 13", "comment"], inplace=True)
     elif config["run_id"] == "kalkutta":
-        df = parse_to_numeric(df, config, dropna=False)
+        # df = parse_to_numeric(df, config, dropna=False)
+        print(df.columns)
+        print("Kalkutta: Nothing to do")
     elif config["run_id"] == "suzhou":
         df.columns = df.columns.str.strip()
         df = df[df["class"] != "MPAL"]
@@ -119,11 +155,9 @@ def main(config):
         df["PT_%_AVG"] = np.nan
     elif config["run_id"] == "bochum":
         df.rename(columns={"Age": "age"}, inplace=True)
-        df["sex"] = df["sex"].apply(lambda x: "Male" if x == "male" else "Female")
         df = parse_to_numeric(df, config, dropna=False)
     elif config["run_id"] == "milano":
-        df["sex"] = df["sex"].apply(lambda x: "Male" if x == "M" else "Female")
-        df = parse_to_numeric(df, config, dropna=False)
+        print("Milano: Nothing to do")
     elif config["run_id"] == "warsaw":
         df.columns = df.columns.str.replace("\n", "").str.strip()
         df = df_to_si(df, config, "warsaw_suzhou_codes_si")

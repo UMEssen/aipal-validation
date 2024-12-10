@@ -10,7 +10,7 @@ authors = ["Merlin Engelke <Merlin.Engelke@uk-essen.de>"]
 aipal_validation = 'aipal_validation.cli:run'
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 fhir-pyrate = {git = "https://github.com/UMEssen/FHIR-PYrate.git", branch = "main"}
 wandb = "^0.15.8"
 sqlalchemy = "^2.0.20"
