@@ -17,25 +17,6 @@ def filter_irrelevant_columns(df, config):
     return df
 
 
-def transform_gender_age_class_italy(df) -> pd.DataFrame:
-    df["sex"] = df["Gender"].apply(lambda x: "Male" if x == "M" else "Female")
-    df["age"] = round(df["Age at diagnosis"], 0).astype(int)
-    df.drop(columns=["Gender", "Age at diagnosis"], inplace=True)
-    df["class"] = df["Diagnosis"].apply(
-        lambda x: (
-            "ALL"
-            if "ALL" in x
-            else "AML"
-            if "AML" in x
-            else "APL"
-            if "APL" in x
-            else "other"
-        )
-    )
-    df = df[~df["class"].isin(["other"])]
-    return df
-
-
 def transform_age_diagnosis(df) -> pd.DataFrame:
     df.rename({"age (years)": "age"}, axis=1, inplace=True)
     df.rename({"diagnose": "class"}, axis=1, inplace=True)
@@ -101,76 +82,105 @@ def parse_classes_maastricht(df):
     return df
 
 
+# Helper functions for specific run_id operations
+def parse_maastricht(df, config):
+    df.dropna(subset=["class"], inplace=True)
+    df = df_to_si(df, config)
+    return parse_classes_maastricht(df)
+
+
+def parse_melbourne(df, config):
+    df.dropna(subset=["class"], inplace=True)
+    df = df_to_si(df, config)
+    print(df.columns)
+    return df
+
+
+def transform_age_poland(df, config):
+    df = transform_age_diagnosis(df)
+    return df_to_si(df, config)
+
+
+def parse_sao_paulo(df, config):
+    df = parse_to_numeric(df, config)
+    df.rename(columns={"Age": "age"}, inplace=True)
+    return df
+
+
+def parse_turkey(df, config):
+    df.rename(columns={"Age": "age"}, inplace=True)
+    return parse_to_numeric(df, config, dropna=False)
+
+
+def parse_buenos_aires(df, config):
+    df.columns = df.columns.str.strip()
+    return parse_to_numeric(df, config, dropna=False)
+
+
+def parse_suzhou(df, config):
+    df.columns = df.columns.str.strip()
+    df = df[df["class"] != "MPAL"]
+    df = df[df["class"] != "AUL"]
+    df = df_to_si(df, config, "warsaw_suzhou_codes_si")
+    df = parse_to_numeric(df, config, dropna=False)
+    df["PT_%_AVG"] = np.nan
+    return df
+
+
+def parse_bochum(df, config):
+    df.rename(columns={"Age": "age"}, inplace=True)
+    return parse_to_numeric(df, config, dropna=False)
+
+
+def parse_newcastle(df, config):
+    print("Newcastle: Insufficient columns provided")
+    df["PT_percent"] = pd.to_numeric(df["PT_percent"], errors="coerce")
+    df["PT_percent"].iloc[0] = 0
+    return df
+
+
 def main(config):
     if skip_build(config):
         return
+
+    # Load and clean initial data
     df = pd.read_excel(config["task_dir"] / "data.xlsx")
     df["class"] = df["class"].str.strip()
     df.columns = df.columns.str.strip()
 
-    # todo make more generic if needed
-    if config["run_id"] == "italy" or config["run_id"] == "rome":
-        df = transform_gender_age_class_italy(df)
-        df = df_to_si(df, config)
-    elif config["run_id"] == "barcelona":
-        print("Barcelona: Nothing to do")
-    elif config["run_id"] == "maastricht":
-        df.dropna(subset=["class"], inplace=True)
-        df = df_to_si(df, config)
-        df = parse_classes_maastricht(df)
-    elif config["run_id"] == "dallas":
-        df = df_to_si(df, config)
-    elif config["run_id"] == "melbourne":
-        df.dropna(subset=["class"], inplace=True)
-        df = df_to_si(df, config)
-        print(df.columns)
-    elif config["run_id"] == "poland":
-        df = transform_age_diagnosis(df)
-        df = df_to_si(df, config)
-    elif config["run_id"] == "sao_paulo":
-        df = parse_to_numeric(df, config)
-        df.rename(columns={"Age": "age"}, inplace=True)
-    elif config["run_id"] == "salamanca":
-        # df = df_to_si(df, config)  # obs since it is the same as the obs_codes_si
-        # df.rename(columns={"Gender": "sex"}, inplace=True)
-        # df.rename(columns={"Age": "age"}, inplace=True)
-        # df.rename(columns={"Class": "class"}, inplace=True)
-        print("Salamanca: Nothing to do")
-    elif config["run_id"] == "turkey":
-        df.rename(columns={"Age": "age"}, inplace=True)
-        df = parse_to_numeric(df, config, dropna=False)
-    elif config["run_id"] == "buenos_aires":
-        df.columns = df.columns.str.strip()
-        df = parse_to_numeric(df, config, dropna=False)
-    elif config["run_id"] == "kalkutta":
-        # df = parse_to_numeric(df, config, dropna=False)
-        print(df.columns)
-        print("Kalkutta: Nothing to do")
-    elif config["run_id"] == "suzhou":
-        df.columns = df.columns.str.strip()
-        df = df[df["class"] != "MPAL"]
-        df = df[df["class"] != "AUL"]
-        df = df_to_si(df, config, "warsaw_suzhou_codes_si")
-        df = parse_to_numeric(df, config, dropna=False)
-        df["PT_%_AVG"] = np.nan
-    elif config["run_id"] == "bochum":
-        df.rename(columns={"Age": "age"}, inplace=True)
-        df = parse_to_numeric(df, config, dropna=False)
-    elif config["run_id"] == "milano":
-        print("Milano: Nothing to do")
-    elif config["run_id"] == "warsaw":
-        df.columns = df.columns.str.replace("\n", "").str.strip()
-        df = df_to_si(df, config, "warsaw_suzhou_codes_si")
-
-    else:
+    # Define operations for each run_id
+    run_operations = {
+        "italy": lambda df, config: print("Rome: Nothing to do"),
+        "rome": lambda df, config: print("Rome: Nothing to do"),
+        "barcelona": lambda df, config: print("Barcelona: Nothing to do"),
+        "maastricht": lambda df, config: parse_maastricht(df, config),
+        "dallas": lambda df, config: df_to_si(df, config),
+        "melbourne": lambda df, config: parse_melbourne(df, config),
+        "poland": lambda df, config: transform_age_poland(df, config),
+        "sao_paulo": lambda df, config: parse_sao_paulo(df, config),
+        "salamanca": lambda df, config: print("Salamanca: Nothing to do"),
+        "turkey": lambda df, config: parse_turkey(df, config),
+        "buenos_aires": lambda df, config: parse_buenos_aires(df, config),
+        "kalkutta": lambda df, config: print("Kalkutta: Nothing to do"),
+        "suzhou": lambda df, config: parse_suzhou(df, config),
+        "bochum": lambda df, config: parse_bochum(df, config),
+        "milano": lambda df, config: print("Milano: Nothing to do"),
+        "newcastle": lambda df, config: parse_newcastle(df, config),
+        "warsaw": lambda df, config: df_to_si(df, config, "warsaw_suzhou_codes_si"),
+    }
+    try:
+        operation = run_operations[config["run_id"]]
+        df = operation(df, config)
+    except KeyError:
         raise NotImplementedError(f"Unknown run_id: {config['run_id']}")
 
+    # Check required columns
     column_names = {v[3] for v in config["obs_codes_si"].values()}
     if not column_names.issubset(df.columns):
         raise ValueError(
             f"Columns {column_names} not found in the data, parsing failed."
         )
 
+    # Final processing
     filter_irrelevant_columns(df, config)
-
     store_df(df, config["task_dir"] / "samples.csv")

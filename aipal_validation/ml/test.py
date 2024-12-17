@@ -2,7 +2,6 @@ import logging
 
 import numpy as np
 import pandas as pd
-import wandb
 from scipy.stats import norm
 from sklearn.ensemble import IsolationForest
 from sklearn.metrics import roc_auc_score
@@ -10,6 +9,7 @@ from sklearn.neighbors import LocalOutlierFactor
 from sklearn.preprocessing import label_binarize
 from sklearn.utils import resample
 
+import wandb
 from aipal_validation.ml.util import init_wandb
 
 
@@ -132,7 +132,7 @@ class LeukemiaModelEvaluator:
 
         return data
 
-    def calculate_metrics(self, data, cutoff_type, min_class_size=5):
+    def calculate_metrics(self, data, cutoff_type, min_class_size=10):
         # Calculate AUC scores
         auc_scores = self.calculate_auc(data)
 
@@ -198,8 +198,9 @@ class LeukemiaModelEvaluator:
         for cat, metrics in results.items():
             final_results[cat] = {}
             for metric, values in metrics.items():
-                mean_val = np.mean(values)
-                std_dev = np.std(values)
+                # Ignore NaN values in calculations
+                mean_val = np.nanmean(values)
+                std_dev = np.nanstd(values)
                 ci_width = norm.ppf((1 + confidence_level) / 2) * (
                     std_dev / np.sqrt(iterations)
                 )
@@ -236,6 +237,11 @@ class LeukemiaModelEvaluator:
         wandb.log({"Cohort Size": len(data)})
         wandb.log({"Cohort Distribution": data["class"].value_counts().to_dict()})
         data.to_csv(self.config["task_dir"] / f"predictions_{cutoff_type}.csv")
+
+        # Filter out classes with fewer than 10 samples
+        class_counts = data["class"].value_counts()
+        valid_classes = class_counts[class_counts >= 10].index.tolist()
+        data = data[data["class"].isin(valid_classes)]
 
         for _ in range(iterations):
             sampled_data = resample(data)
