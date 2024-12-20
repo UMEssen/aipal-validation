@@ -71,8 +71,6 @@ def check_icd_occurrence(config):
     print(conds_df["condition_date"].min())
     print(conds_df["condition_date"].max())
 
-    # conds_df.to_feather('aipal_validation/helper/conditions.ftr')
-
     # conds_df = pd.read_feather('aipal_validation/helper/conditions.ftr')
     print(conds_df.columns)
     print(conds_df.shape)
