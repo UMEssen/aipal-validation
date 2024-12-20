@@ -107,11 +107,6 @@ def parse_sao_paulo(df, config):
     return df
 
 
-def parse_turkey(df, config):
-    df.rename(columns={"Age": "age"}, inplace=True)
-    return parse_to_numeric(df, config, dropna=False)
-
-
 def parse_buenos_aires(df, config):
     df.columns = df.columns.str.strip()
     return parse_to_numeric(df, config, dropna=False)
@@ -150,21 +145,20 @@ def main(config):
 
     # Define operations for each run_id
     run_operations = {
-        "italy": lambda df, config: print("Rome: Nothing to do"),
-        "rome": lambda df, config: print("Rome: Nothing to do"),
-        "barcelona": lambda df, config: print("Barcelona: Nothing to do"),
+        "rome": lambda df, config: (print("Rome: Nothing to do"), df)[1],
+        "barcelona": lambda df, config: (print("Barcelona: Nothing to do"), df)[1],
         "maastricht": lambda df, config: parse_maastricht(df, config),
         "dallas": lambda df, config: df_to_si(df, config),
         "melbourne": lambda df, config: parse_melbourne(df, config),
         "poland": lambda df, config: transform_age_poland(df, config),
         "sao_paulo": lambda df, config: parse_sao_paulo(df, config),
-        "salamanca": lambda df, config: print("Salamanca: Nothing to do"),
-        "turkey": lambda df, config: parse_turkey(df, config),
+        "salamanca": lambda df, config: (print("Salamanca: Nothing to do"), df)[1],
+        "turkey": lambda df, config: (print("Turkey: Nothing to do"), df)[1],
         "buenos_aires": lambda df, config: parse_buenos_aires(df, config),
-        "kalkutta": lambda df, config: print("Kalkutta: Nothing to do"),
+        "kalkutta": lambda df, config: (print("Kalkutta: Nothing to do"), df)[1],
         "suzhou": lambda df, config: parse_suzhou(df, config),
         "bochum": lambda df, config: parse_bochum(df, config),
-        "milano": lambda df, config: print("Milano: Nothing to do"),
+        "milano": lambda df, config: (print("Milano: Nothing to do"), df)[1],
         "newcastle": lambda df, config: parse_newcastle(df, config),
         "warsaw": lambda df, config: df_to_si(df, config, "warsaw_suzhou_codes_si"),
     }
