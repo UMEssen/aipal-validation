@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 import pickle
 from pathlib import Path
@@ -21,8 +22,6 @@ pipelines = {
     },
 }
 
-
-# Set up logging
 LOG_LEVEL = logging.INFO
 logging.basicConfig(
     format="%(levelname)s %(asctime)s [%(name)s.%(funcName)s:%(lineno)d]: %(message)s",
@@ -31,17 +30,21 @@ logging.basicConfig(
     force=True,
 )
 logging.getLogger().setLevel(LOG_LEVEL)
-
 logger = logging.getLogger(__name__)
 
 
-# Load config file
 def load_config(file_path: str = "aipal_validation/config/config_training.yaml"):
-    return yaml.safe_load((Path.cwd() / file_path).open())
+    path = Path.cwd() / file_path
+    if path.suffix == ".yaml":
+        return yaml.safe_load(path.open())
+    elif path.suffix == ".json":
+        return json.load(path.open())
+    else:
+        raise ValueError(f"Unsupported config format: {path.suffix}")
 
 
 @timed
-def build_cache(config):
+def build_cache(config: dict):
     extract = FHIRExtractor(config)
     filt = FHIRFilter(config)
     validator = FHIRValidator(config)
@@ -95,8 +98,7 @@ def run():
     config.update(vars(args))
     if config["debug"]:
         logger.warning(
-            "WARNING!!! You are running aipal_validation in debug mode, "
-            "please change this when you are done testing."
+            "WARNING!!! Running in debug mode. Switch off debug for production."
         )
 
     config["root_dir"] = config["root_dir"] / config["run_id"]
@@ -116,7 +118,7 @@ def run():
 
     assert config["task"] in pipelines, f"Task {config['task']} not found."
 
-    # UK-Essen generic firemetrics pipeline
+    # Generic FHIR-pipeline
     if config["run_id"].startswith("V"):
         if config["step"] == "all":
             config["step"] = "data+sampling+test"
@@ -137,7 +139,6 @@ def run():
                 pickle.dump(config, of)
     else:
         # Custom pipeline in case data already exists
-        # Case 1. Italy + Poland - .xlsx file
         if config["step"] == "all":
             config["step"] = "sampling+test"
             config["step"] = config["step"].split("+")
@@ -149,5 +150,5 @@ def run():
         run_r_script(config)
         test.main(config)
 
-    if "eval_all" in config and config["eval_all"]:
+    if config.get("eval_all"):
         test.main(config)
