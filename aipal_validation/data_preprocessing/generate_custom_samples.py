@@ -134,6 +134,11 @@ def parse_newcastle(df, config):
     return df
 
 
+def parse_antananarivo(df, config):
+    df["sex"] = ["Male" if x == "MALE" else "Female" for x in df["sex"]]
+    return df
+
+
 def main(config):
     if skip_build(config):
         return
@@ -161,6 +166,7 @@ def main(config):
         "milano": lambda df, config: (print("Milano: Nothing to do"), df)[1],
         "newcastle": lambda df, config: parse_newcastle(df, config),
         "warsaw": lambda df, config: df_to_si(df, config, "warsaw_suzhou_codes_si"),
+        "antananarivo": lambda df, config: parse_antananarivo(df, config),
     }
     try:
         operation = run_operations[config["run_id"]]

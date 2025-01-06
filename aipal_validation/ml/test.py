@@ -242,6 +242,9 @@ class LeukemiaModelEvaluator:
         class_counts = data["class"].value_counts()
         valid_classes = class_counts[class_counts >= 10].index.tolist()
         data = data[data["class"].isin(valid_classes)]
+        if data.empty:
+            logging.warning("No data remaining after filtering out small classes")
+            return None
 
         for _ in range(iterations):
             sampled_data = resample(data)
