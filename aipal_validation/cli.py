@@ -102,8 +102,7 @@ def run():
         )
 
     config["root_dir"] = config["root_dir"] / config["run_id"]
-    config["data_dir"] = config["root_dir"] / "data_raw"
-    config["data_dir"].mkdir(parents=True, exist_ok=True)
+
     config["task_dir"] = config["root_dir"] / config["task"]
     config["task_dir"].mkdir(parents=True, exist_ok=True)
     logger.info(f"The outputs will be stored in {config['task_dir']}.")
@@ -121,6 +120,8 @@ def run():
     # Generic FHIR-pipeline
     if config["run_id"].startswith("V"):
         if config["step"] == "all":
+            config["data_dir"] = config["root_dir"] / "data_raw"
+            config["data_dir"].mkdir(parents=True, exist_ok=True)
             config["step"] = "data+sampling+test"
             config["step"] = config["step"].split("+")
 
