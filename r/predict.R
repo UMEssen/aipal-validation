@@ -31,6 +31,9 @@ new_data$Lymphocytes_G_L <- as.numeric(new_data$Lymphocytes_G_L)
 missing_values <- sapply(new_data, function(x) sum(is.na(x)))
 print(missing_values)
 
+# Replace completely empty columns with NA and assign a consistent type (e.g., numeric)
+new_data <- new_data %>% mutate(across(everything(), ~ ifelse(is.na(.) & all(is.na(.)), NA_real_, .)))
+
 # Prediction function
 predict_type <- function(new_data) {
   prediction <- predict(model, newdata = new_data, type = "prob", na.action = na.pass)
