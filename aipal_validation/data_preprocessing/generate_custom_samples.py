@@ -139,6 +139,11 @@ def parse_antananarivo(df, config):
     return df
 
 
+def parse_lagos(df, config):
+    df.rename(columns={"LDH_IU_L": "LDH_UI_L"}, inplace=True)
+    return df
+
+
 def main(config):
     if skip_build(config):
         return
@@ -167,10 +172,13 @@ def main(config):
         "newcastle": lambda df, config: parse_newcastle(df, config),
         "warsaw": lambda df, config: df_to_si(df, config, "warsaw_suzhou_codes_si"),
         "antananarivo": lambda df, config: parse_antananarivo(df, config),
+        "lagos": lambda df, config: parse_lagos(df, config),
+        "madagascar": lambda df, config: (print("Madagascar: Nothing to do"), df)[1],
     }
     try:
         operation = run_operations[config["run_id"]]
         df = operation(df, config)
+        print(df.columns)
     except KeyError:
         raise NotImplementedError(f"Unknown run_id: {config['run_id']}")
 
