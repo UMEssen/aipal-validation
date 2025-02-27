@@ -178,7 +178,7 @@ class MulticentricOutlierDetector:
         pca_results = pca.fit_transform(clean_df[self.features])
 
         plt.figure(figsize=(10, 6))
-        for cls, color in zip(["ALL", "AML", "APL"], ["blue", "green", "red"]):
+        for cls, color in zip(["ALL", "AML", "APL"], ["blue", "green", "red"], strict=False):
             mask = clean_df["class"] == cls
             plt.scatter(
                 pca_results[mask, 0],
