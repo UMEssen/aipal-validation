@@ -144,6 +144,13 @@ def parse_lagos(df, config):
     return df
 
 
+def parse_hannover(df, config):
+    df = df[df["out of measurment span"] == 0]
+    df.rename(columns={"LDH_IU_L": "LDH_UI_L"}, inplace=True)
+    df["Fibrinogen_g_L"] = pd.to_numeric(df["Fibrinogen_g_L"], errors="coerce")
+    return df
+
+
 def main(config):
     if skip_build(config):
         return
@@ -174,6 +181,7 @@ def main(config):
         "antananarivo": lambda df, config: parse_antananarivo(df, config),
         "lagos": lambda df, config: parse_lagos(df, config),
         "madagascar": lambda df, config: (print("Madagascar: Nothing to do"), df)[1],
+        "hannover": lambda df, config: parse_hannover(df, config),
     }
     try:
         operation = run_operations[config["run_id"]]

@@ -9,6 +9,8 @@ feature_columns: ['Fibrinogen_g_L',
     'age',
     'Monocytes_G_L',
     'Platelets_G_L']
+
+# antananarivo  barcelona  bochum  buenos_aires  dallas  hannover  investigate  kalkutta  lagos  maastricht  madagascar  melbourne  milano  newcastle  rome  salamanca  sao_paulo  suzhou  turkey  Vessen  wandb  warsaw
 # suzhou has MPAL
-cities_countries: ['dallas', 'melbourne', 'maastricht', 'barcelona', 'bochum','warsaw', 'kalkutta', 'rome', 'salamanca', 'sao_paulo', 'turkey', 'buenos_aires', 'milano', 'suzhou', 'Vessen', 'antananarivo' ] # add essen for kids
-continent_mapping: {'dallas': 'north_america', 'melbourne': 'australia', 'maastricht': 'europe', 'barcelona': 'europe', 'Vessen': 'europe', 'bochum': 'europe', 'warsaw': 'europe', 'kalkutta': 'asia', 'rome': 'europe', 'salamanca': 'europe', 'sao_paulo': 'south_america', 'turkey': 'asia', 'buenos_aires': 'south_america', 'suzhou': 'asia', 'milano': 'europe', 'africa': 'antananarivo'}
+cities_countries: ['dallas', 'melbourne', 'maastricht', 'barcelona', 'bochum','warsaw', 'kalkutta', 'rome', 'salamanca', 'sao_paulo', 'turkey', 'buenos_aires', 'milano', 'suzhou', 'antananarivo', 'hannover', 'newcastle', 'lagos', 'madagascar' ] # add 'Vessen' for kids
+continent_mapping: {'dallas': 'north_america', 'melbourne': 'australia', 'maastricht': 'europe', 'barcelona': 'europe', 'Vessen': 'europe', 'bochum': 'europe', 'warsaw': 'europe', 'kalkutta': 'asia', 'rome': 'europe', 'salamanca': 'europe', 'sao_paulo': 'south_america', 'turkey': 'asia', 'buenos_aires': 'south_america', 'suzhou': 'asia', 'milano': 'europe', 'africa': 'antananarivo', 'hannover': 'europe', 'newcastle': 'europe', 'lagos': 'africa', 'madagascar': 'africa'}
