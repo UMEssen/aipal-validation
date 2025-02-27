@@ -106,6 +106,15 @@ class MulticentricOutlierDetector:
         print("\n[ Baseline Performance ]")
         self._evaluate(self.df_test)
 
+        # Add a column to track correct/incorrect predictions before outlier removal
+        prediction_cols = ["prediction.ALL", "prediction.AML", "prediction.APL"]
+        self.df_test["predicted_class"] = (
+            self.df_test[prediction_cols]
+            .idxmax(axis=1)
+            .str.replace("prediction.", "", regex=False)
+        )
+        self.df_test["correctly_predicted"] = (self.df_test["class"] == self.df_test["predicted_class"]).astype(int)
+
         # Detect outliers
         self.df_test["outlier"] = 0
         for cls in self.df_test["class"].unique():
@@ -142,6 +151,49 @@ class MulticentricOutlierDetector:
                 (cls_outliers / cls_samples) * 100 if cls_samples > 0 else 0
             )
             print(f"  {cls}: {cls_outliers}/{cls_samples} ({cls_percentage:.2f}%)")
+
+        # Analysis of wrongly filtered samples
+        print("\n[ Analysis of Wrongly Filtered Samples ]")
+
+        # Count correctly and incorrectly predicted samples before filtering
+        correct_before = sum(self.df_test["correctly_predicted"] == 1)
+        incorrect_before = sum(self.df_test["correctly_predicted"] == 0)
+
+        # Count how many correct and incorrect predictions were filtered out
+        correct_filtered = sum((self.df_test["correctly_predicted"] == 1) & (self.df_test["outlier"] == 1))
+        incorrect_filtered = sum((self.df_test["correctly_predicted"] == 0) & (self.df_test["outlier"] == 1))
+
+        # Calculate percentages
+        correct_filtered_pct = (correct_filtered / correct_before) * 100 if correct_before > 0 else 0
+        incorrect_filtered_pct = (incorrect_filtered / incorrect_before) * 100 if incorrect_before > 0 else 0
+
+        print(f"Correctly predicted samples before filtering: {correct_before}")
+        print(f"Incorrectly predicted samples before filtering: {incorrect_before}")
+        print(f"Correctly predicted samples filtered out: {correct_filtered} ({correct_filtered_pct:.2f}%)")
+        print(f"Incorrectly predicted samples filtered out: {incorrect_filtered} ({incorrect_filtered_pct:.2f}%)")
+
+        # Per-class analysis of wrongly filtered samples
+        print("\nWrongly filtered samples by class:")
+        for cls in self.df_test["class"].unique():
+            cls_correct = sum((self.df_test["class"] == cls) & (self.df_test["correctly_predicted"] == 1))
+            cls_correct_filtered = sum(
+                (self.df_test["class"] == cls)
+                & (self.df_test["correctly_predicted"] == 1)
+                & (self.df_test["outlier"] == 1)
+            )
+            cls_correct_pct = (cls_correct_filtered / cls_correct) * 100 if cls_correct > 0 else 0
+
+            cls_incorrect = sum((self.df_test["class"] == cls) & (self.df_test["correctly_predicted"] == 0))
+            cls_incorrect_filtered = sum(
+                (self.df_test["class"] == cls)
+                & (self.df_test["correctly_predicted"] == 0)
+                & (self.df_test["outlier"] == 1)
+            )
+            cls_incorrect_pct = (cls_incorrect_filtered / cls_incorrect) * 100 if cls_incorrect > 0 else 0
+
+            print(f"  {cls}:")
+            print(f"    Correctly predicted filtered: {cls_correct_filtered}/{cls_correct} ({cls_correct_pct:.2f}%)")
+            print(f"    Incorrectly predicted filtered: {cls_incorrect_filtered}/{cls_incorrect} ({cls_incorrect_pct:.2f}%)")
 
         # Filter outliers and re-evaluate
         clean_df = self.df_test[self.df_test["outlier"] == 0]
