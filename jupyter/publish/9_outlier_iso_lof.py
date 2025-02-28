@@ -2,12 +2,19 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import yaml
+import random
+import os
 from sklearn.decomposition import PCA
 from sklearn.ensemble import IsolationForest
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import classification_report, roc_auc_score
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.preprocessing import StandardScaler, label_binarize
+
+# Set random seeds for reproducibility
+np.random.seed(123)
+random.seed(123)
+os.environ['PYTHONHASHSEED'] = '123'
 
 
 class MulticentricOutlierDetector:
@@ -73,7 +80,7 @@ class MulticentricOutlierDetector:
         stratified = []
         for (_cls, _cohort), group in self.df_train.groupby(["class", "city_country"]):
             stratified.append(
-                group if len(group) <= min_samples else group.sample(min_samples)
+                group if len(group) <= min_samples else group.sample(min_samples, random_state=123)
             )
         self.df_train = pd.concat(stratified)
 
@@ -88,7 +95,7 @@ class MulticentricOutlierDetector:
         for cls in self.df_train["class"].unique():
             cls_data = self.df_train[self.df_train["class"] == cls][self.features]
 
-            iso = IsolationForest(random_state=42, contamination="auto").fit(cls_data)
+            iso = IsolationForest(random_state=123, contamination="auto").fit(cls_data)
             lof = LocalOutlierFactor(
                 n_neighbors=20, contamination="auto", novelty=True
             ).fit(cls_data)
@@ -134,6 +141,7 @@ class MulticentricOutlierDetector:
         outlier_percentage = (outlier_samples / total_samples) * 100
 
         print("\n[ Outlier Detection Results ]")
+        print(f"Total training samples: {len(self.df_train)}")
         print(f"Total test samples: {total_samples}")
         print(f"Detected outliers: {outlier_samples} ({outlier_percentage:.2f}%)")
         print(
@@ -224,6 +232,11 @@ class MulticentricOutlierDetector:
         print("\nClassification Report:")
         print(classification_report(df["class"], y_pred, target_names=classes))
 
+        return {
+            'auc_scores': auc_scores,
+            'accuracy': classification_report(df["class"], y_pred, target_names=classes, output_dict=True)['accuracy']
+        }
+
     def _visualize_results(self, clean_df):
         """Visualize data distribution after cleaning"""
         pca = PCA(n_components=2)
@@ -243,7 +256,8 @@ class MulticentricOutlierDetector:
         plt.xlabel("Principal Component 1")
         plt.ylabel("Principal Component 2")
         plt.legend()
-        plt.show()
+        plt.savefig("pca_cleaned_data.png")
+        plt.close()
 
 
 def main():
