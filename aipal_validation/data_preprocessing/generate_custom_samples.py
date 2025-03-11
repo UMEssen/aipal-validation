@@ -151,6 +151,14 @@ def parse_hannover(df, config):
     return df
 
 
+def parse_wroclaw(df, config):
+    df = df_to_si(df, config, "wroclaw_codes_si")
+    df.index = [f"WC{i}" for i in range(len(df))]
+    df.ID = df.index
+    df.sex = ["Male" if x == 0 else "Female" for x in df.sex]
+    return df
+
+
 def main(config):
     if skip_build(config):
         return
@@ -177,7 +185,7 @@ def main(config):
         "bochum": lambda df, config: parse_bochum(df, config),
         "milano": lambda df, config: (print("Milano: Nothing to do"), df)[1],
         "newcastle": lambda df, config: parse_newcastle(df, config),
-        "warsaw": lambda df, config: df_to_si(df, config, "warsaw_suzhou_codes_si"),
+        "wroclaw": lambda df, config: parse_wroclaw(df, config),
         "antananarivo": lambda df, config: parse_antananarivo(df, config),
         "lagos": lambda df, config: parse_lagos(df, config),
         "madagascar": lambda df, config: (print("Madagascar: Nothing to do"), df)[1],
@@ -186,7 +194,6 @@ def main(config):
     try:
         operation = run_operations[config["run_id"]]
         df = operation(df, config)
-        print(df.columns)
     except KeyError:
         raise NotImplementedError(f"Unknown run_id: {config['run_id']}")
 

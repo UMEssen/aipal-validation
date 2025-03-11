@@ -3,7 +3,7 @@ task: aipal
 debug: False
 
 # General params for setting the folders and the extraction
-run_id: "kalkutta"
+run_id: "wroclaw"
 
 root_dir: "/data"
 step: "all"
@@ -57,18 +57,6 @@ rome_codes_si : {
     'Lymphocites (*103/mm3)': ['*10^3/mm3', 1, '/nl', 'Lymphocytes_G_L']
 }
 
-poland_codes_si : {
-    'MCV (fL)': ['fL', 1, 'fL', 'MCV_fL'],
-    'PT (%)': ['%', 1, '%', 'PT_percent'],
-    'LDH (IU/L)': ['U/L', 1, 'U/L', 'LDH_UI_L'],
-    'MCHC, g/dl': ['g/dl', 10, 'g/L', 'MCHC_g_L'],
-    'WBC 10x9/L': ['10^9/L', 1, '/nl', 'WBC_G_L'],
-    'fibrinogen g/L': ['g/L', 1, 'g/L', 'Fibrinogen_g_L'],
-    'monocyte counts (10x9/L)': ['10^9/L', 1, '/nl', 'Monocytes_G_L'],
-    'PLT 10x9/L': ['10^9/L', 1, '/nl', 'Platelets_G_L'],
-    'lymphocyte 10x9/L': ['10^9/L', 1, '/nl', 'Lymphocytes_G_L']
-}
-
 suzhou_codes_si : {
     'MCV_fL(82-100)': ['fL', 1, 'fL', 'MCV_fL'],
     'PT_%_AVG': ['%', 1, '%', 'PT_percent'],
@@ -93,16 +81,17 @@ maastricht_codes_si : {
     'Lymphocytes G/L': ['10^9/L', 1, '/nl', 'Lymphocytes_G_L'],
 }
 
-warsaw_suzhou_codes_si:
-  MCV_fL: ['fl', 1, 'fl', 'MCV_fL']
-  PT percent: ['%', 1, '%', 'PT_percent']
-  LDH_IU_L: ['U/l', 1, 'U/l', 'LDH_UI_L']
-  MCHC_g_L: ['g/dl', 1, 'g/l', 'MCHC_g_L']
-  WBC G/L (x10^3 /µl): ['/nl', 1, '/nl', 'WBC_G_L']
-  Fibrinogen_g/L: ['g/L', 1, 'g/l', 'Fibrinogen_g_L']
-  Monocytes G/L (x10^3 /µl): ['/nl', 1, '/nl', 'Monocytes_G_L']
-  Platelets G/L (x10^3 /µl): ['/nl', 1, '/nl', 'Platelets_G_L']
-  Lymphocytes G/L (x10^3 /µl): ['/nl', 1, '/nl', 'Lymphocytes_G_L']
+wroclaw_codes_si : {
+    'MCV (fL)': ['fL', 1, 'fL', 'MCV_fL'],
+    'PT (%)': ['%', 1, '%', 'PT_percent'],
+    'LDH (IU/L)': ['U/L', 1, 'U/L', 'LDH_UI_L'],
+    'MCHC, g/dl': ['g/dl', 10, 'g/L', 'MCHC_g_L'],
+    'WBC 10x9/L': ['10^9/L', 1, '/nl', 'WBC_G_L'],
+    'fibrinogen g/L': ['g/L', 1, 'g/L', 'Fibrinogen_g_L'],
+    'monocyte counts (10x9/L)': ['10^9/L', 1, '/nl', 'Monocytes_G_L'],
+    'PLT 10x9/L': ['10^9/L', 1, '/nl', 'Platelets_G_L'],
+    'lymphocyte 10x9/L': ['10^9/L', 1, '/nl', 'Lymphocytes_G_L']
+}
 
 melbourne_codes_si : {
     'MCV_fL ': ['fL', 1, 'fL', 'MCV_fL'],
