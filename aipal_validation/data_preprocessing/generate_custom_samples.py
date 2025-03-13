@@ -50,16 +50,25 @@ def df_to_si(df, config, dict_key_name=None):
 
 def parse_to_numeric(df, config, names=None, dropna=True):
     column_names = names if names else {v[3] for v in config["obs_codes_si"].values()}
-    for col in column_names:
-        if col in df.columns:
-            df[col] = df[col].astype(str).str.replace(",", ".")
-            df[col] = pd.to_numeric(df[col], errors="coerce")
+    if not column_names:
+        logging.warning("No columns specified for numeric parsing")
+        return df
+
+    # Only process columns that actually exist in the dataframe
+    columns_to_process = [col for col in column_names if col in df.columns]
+    if not columns_to_process:
+        logging.warning(f"None of the specified columns {column_names} found in dataframe")
+        return df
+
+    for col in columns_to_process:
+        df[col] = df[col].astype(str).str.replace(",", ".")
+        df[col] = pd.to_numeric(df[col], errors="coerce")
 
     logging.info(
-        f"Identified {df.shape[0] - df.dropna(subset=column_names).shape[0]} rows with missing values"
+        f"Identified {df.shape[0] - df.dropna(subset=columns_to_process).shape[0]} rows with missing values"
     )
     if dropna:
-        df = df.dropna(subset=column_names)
+        df = df.dropna(subset=columns_to_process)
         logging.info(f"Dropped rows with missing values, new shape: {df.shape}")
     else:
         df = df.fillna(np.nan)
@@ -103,7 +112,8 @@ def transform_age_poland(df, config):
 
 def parse_sao_paulo(df, config):
     df = parse_to_numeric(df, config)
-    df.rename(columns={"Age": "age"}, inplace=True)
+    df.rename(columns={"LDH_IU_L": "LDH_UI_L"}, inplace=True)
+    df["LDH_UI_L"] = pd.to_numeric(df["LDH_UI_L"], errors="coerce")
     return df
 
 
