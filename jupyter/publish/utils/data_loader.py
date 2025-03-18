@@ -31,7 +31,7 @@ def load_data(config_path='cfg.yaml', root_path='/local/work/merengelke/aipal/',
     cities_countries = config['cities_countries']
 
     if config['is_adult']:
-        cities_countries = [city_country for city_country in cities_countries if city_country != 'Vessen']
+        cities_countries = [city_country for city_country in cities_countries if city_country != 'newcastle' and city_country != 'turkey' and city_country != 'Vessen']
 
     paths = [f"{root_path}{city_country}/aipal/predict.csv" for city_country in cities_countries]
 
