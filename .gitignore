@@ -24,3 +24,8 @@ jupyter/publish/google.json
 kite/
 *.svg
 *.png
+tmp.cmd
+jupyter/publish/all_cohorts_adults.csv
+jupyter/publish/all_cohorts_children.csv
+jupyter/publish/excel_tables
+jupyter/publish/umap.ipynb

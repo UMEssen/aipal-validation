@@ -213,28 +213,30 @@ class MulticentricOutlierDetector:
 
     def _evaluate(self, df):
         """Helper method for performance evaluation"""
-        # Calculate AUC
-        classes = ["ALL", "AML", "APL"]
-        y_true = label_binarize(df["class"], classes=classes)
+        # Get available classes in the data
+        available_classes = sorted(df["class"].unique())
+
+        # Calculate AUC only for available classes
         auc_scores = {}
-        for i, cls in enumerate(classes):
-            if len(np.unique(y_true[:, i])) > 1:
-                auc_scores[cls] = roc_auc_score(y_true[:, i], df[f"prediction.{cls}"])
+        for cls in available_classes:
+            # Create binary labels for this class
+            y_true = (df["class"] == cls).astype(int)
+            if len(np.unique(y_true)) > 1:  # Check if we have both positive and negative samples
+                auc_scores[cls] = roc_auc_score(y_true, df[f"prediction.{cls}"])
             else:
                 auc_scores[cls] = np.nan
         print("AUC Scores:", auc_scores)
 
         # Classification report
-        y_pred = df[["prediction.ALL", "prediction.AML", "prediction.APL"]].idxmax(
-            axis=1
-        )
+        prediction_cols = [f"prediction.{c}" for c in available_classes]
+        y_pred = df[prediction_cols].idxmax(axis=1)
         y_pred = y_pred.str.replace("prediction.", "", regex=False)
         print("\nClassification Report:")
-        print(classification_report(df["class"], y_pred, target_names=classes))
+        print(classification_report(df["class"], y_pred, labels=available_classes))
 
         return {
             'auc_scores': auc_scores,
-            'accuracy': classification_report(df["class"], y_pred, target_names=classes, output_dict=True)['accuracy']
+            'accuracy': classification_report(df["class"], y_pred, labels=available_classes, output_dict=True)['accuracy']
         }
 
     def _visualize_results(self, clean_df):
