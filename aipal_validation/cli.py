@@ -13,6 +13,8 @@ from aipal_validation.data_preprocessing import (
 from aipal_validation.fhir import FHIRExtractor, FHIRFilter, FHIRValidator
 from aipal_validation.helper.util import is_main_process, run_r_script, timed
 from aipal_validation.ml import test
+from aipal_validation.outlier import OutlierChecker
+from aipal_validation.outlier.train_outlier import MulticentricOutlierDetector
 
 pipelines = {
     "aipal": {
@@ -87,6 +89,45 @@ def parse_args_local(config) -> argparse.Namespace:
         default=False,
         help="Evaluate all cohorts in on go plus try to filter outliers",
     )
+    parser.add_argument(
+        "--sample",
+        type=str,
+        help="Path to sample JSON file for outlier detection",
+    )
+    parser.add_argument(
+        "--model_dir",
+        type=str,
+        help="Directory containing trained outlier detection models",
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="aipal_validation/config/config_training.yaml",
+        help="Path to configuration file",
+    )
+    parser.add_argument(
+        "--r_script",
+        type=str,
+        default="r/predict.R",
+        help="Path to R script for prediction",
+    )
+    parser.add_argument(
+        "--train_outlier",
+        action="store_true",
+        default=False,
+        help="Train outlier detection models",
+    )
+    parser.add_argument(
+        "--outlier_config",
+        type=str,
+        default="aipal_validation/config/config_outlier.yaml",
+        help="Path to outlier configuration file",
+    )
+    parser.add_argument(
+        "--outlier_output_dir",
+        type=str,
+        help="Directory to save trained outlier models",
+    )
 
     return parser.parse_args()
 
@@ -115,7 +156,48 @@ def run():
     fh.setFormatter(formatter)
     logging.getLogger().addHandler(fh)
 
+    # Handle outlier model training
+    if config.get("train_outlier"):
+        logger.info("Training outlier detection models...")
+        if not config.get("outlier_output_dir"):
+            raise ValueError("--outlier_output_dir must be specified when training outlier models")
+
+        detector = MulticentricOutlierDetector(config["outlier_config"])
+        detector.train_outlier_models()
+        detector.save_models(config["outlier_output_dir"])
+        detector.detect_and_evaluate()
+        return
+
     assert config["task"] in pipelines, f"Task {config['task']} not found."
+
+    # Handle outlier detection on a sample
+    if config.get("sample") and config.get("model_dir"):
+        logger.info("Running outlier detection on sample...")
+        checker = OutlierChecker()
+        checker.load_models(config["model_dir"], config["config"])
+
+        with open(config["sample"], "r") as f:
+            sample_data = json.load(f)
+
+        results = checker.check_sample(sample_data)
+        logger.info("\nOutlier Detection Results:")
+        for cls, result in results.items():
+            logger.info(f"\n{cls}:")
+            logger.info(f"  Is Outlier: {result['is_outlier']}")
+            logger.info(f"  Isolation Forest Score: {result['iso_forest_score']:.4f}")
+            logger.info(f"  LOF Score: {result['lof_score']:.4f}")
+
+        # Only skip if ALL classes are outliers
+        is_outlier_all = all(result["is_outlier"] for result in results.values())
+
+        if not is_outlier_all:
+            logger.info("Sample is not an outlier for all classes, running prediction...")
+            config["r_script"] = "r/predict_with_outlier.R"  # Use outlier-specific R script
+            config["r_script_args"] = [config["sample"]]  # Pass sample file path as argument
+            run_r_script(config)
+        else:
+            logger.warning("Sample is an outlier for all classes, skipping prediction.")
+        return
 
     # Generic FHIR-pipeline
     if config["run_id"].startswith("V"):

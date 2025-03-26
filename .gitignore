@@ -25,6 +25,7 @@ kite/
 *.svg
 *.png
 tmp.cmd
+tmp
 jupyter/publish/all_cohorts_adults.csv
 jupyter/publish/all_cohorts_children.csv
 jupyter/publish/excel_tables

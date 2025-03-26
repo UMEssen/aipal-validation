@@ -95,8 +95,29 @@ def clear_process_data(config):
 
 
 def run_r_script(config):
+    """Run R script for prediction."""
+    if config.get("debug"):
+        logger.warning("WARNING!!! Running in debug mode. Switch off debug for production.")
+
+    # Get R script path from config, default to predict.R
+    r_script_path = config.get("r_script", "r/predict.R")
+
+    # Get additional arguments for R script
+    r_script_args = config.get("r_script_args", [])
+
+    # Command to run the R script
+    command = ["Rscript", r_script_path] + r_script_args
+
     try:
-        # check for predict.csv existance
+        # Skip predict.csv check for outlier prediction script
+        if r_script_path == "r/predict_with_outlier.R":
+            logging.info("Running outlier prediction script...")
+            result = subprocess.run(command, capture_output=True, text=True, check=True)
+            logging.info("R script output: %s", result.stdout)
+            logging.info("R script errors: %s", result.stderr)
+            return
+
+        # check for predict.csv existance for regular prediction
         if (
             os.path.exists(config["task_dir"] / Path("predict.csv"))
             and not config["rerun_cache"]
@@ -107,12 +128,6 @@ def run_r_script(config):
             return
         else:
             logging.info("Running R script to generate predictions.")
-            # Path to the R script
-            r_script_path = "r/predict.R"
-
-            # Command to run the R script
-            command = ["Rscript", r_script_path]
-
             # Running the command
             result = subprocess.run(command, capture_output=True, text=True, check=True)
 
