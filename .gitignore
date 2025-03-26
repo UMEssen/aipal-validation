@@ -22,7 +22,6 @@ jupyter/tmp.cmd
 aipal_validation.code-workspace
 jupyter/publish/google.json
 kite/
-*.svg
 *.png
 tmp.cmd
 tmp
