@@ -82,6 +82,7 @@ def parse_args_local(config) -> argparse.Namespace:
         "--step",
         type=str,
         default="all",
+        help="Step to run, all_cohorts is for all_cohorts in one go",
     )
     parser.add_argument(
         "--eval_all",
@@ -144,7 +145,10 @@ def run():
 
     config["root_dir"] = config["root_dir"] / config["run_id"]
 
-    config["task_dir"] = config["root_dir"] / config["task"]
+    if config["step"] == "all_cohorts":
+        config["task_dir"] = config["root_dir"] / "all"
+    else:
+        config["task_dir"] = config["root_dir"] / config["task"]
     config["task_dir"].mkdir(parents=True, exist_ok=True)
     logger.info(f"The outputs will be stored in {config['task_dir']}.")
 
@@ -231,6 +235,9 @@ def run():
 
     if "test" in config["step"]:
         run_r_script(config)
+        test.main(config)
+
+    if "all_cohorts" in config["step"]:
         test.main(config)
 
     if config.get("eval_all"):

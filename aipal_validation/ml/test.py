@@ -1,4 +1,5 @@
 import logging
+import os
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,7 @@ from sklearn.preprocessing import label_binarize
 from sklearn.utils import resample
 
 import wandb
+import yaml
 from aipal_validation.ml.util import init_wandb
 
 
@@ -305,7 +307,7 @@ class LeukemiaModelEvaluator:
 def main(config):
     # Idea: Run each center seperately and see how the performance varies
     # Minimum cohort size is 30
-    # Minimum class size is 5
+    # Minimum class size is 10
     init_wandb(config)
 
     cutoff_dict = {
@@ -314,30 +316,25 @@ def main(config):
         "confident cutoff": "PPV",
     }
 
-    if config["eval_all"]:
-        cities_countries = [
-            "poland",
-            "rome",
-            "salamanca",
-            "sao_paulo",
-            "turkey",
-            "buenos_aires",
-        ]
+    if config['step'] == 'all_cohorts':
+        # make relative to the package directory
+        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'config_analysis.yaml')
+        config_analysis = yaml.safe_load(open(path))
+        cities_countries = config_analysis['cities_countries']
         root = config["root_dir"].parent
         paths = [
             f"{root}/{city_country}/aipal/predict.csv"
             for city_country in cities_countries
         ]
-        cutoff_dict.update(
-            {
-                "outlier": "ISO"
-            }  # Currently only IsolationForest + LocalOutlierFactor is supported
-        )
         data = pd.DataFrame()
         print(f"Paths: {paths}")
         for path in paths:
             df_small = pd.read_csv(path)
             data = pd.concat([data, df_small])
+        logging.info(f"Data shape: {data.shape}")
+        all_dir = config["root_dir"] / "all"
+        os.makedirs(all_dir, exist_ok=True)
+        data.to_csv(all_dir / "predict.csv", index=False)
 
     else:
         data = pd.read_csv(config["task_dir"] / "predict.csv")
