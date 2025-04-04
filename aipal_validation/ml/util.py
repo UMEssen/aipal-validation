@@ -17,8 +17,9 @@ def get_param_for_task_model(config, param: str, task: str, model: str):
 
 
 def init_wandb(config):
+    name_run = f"{config['run_id']}-{pd.Timestamp.now().strftime('%m%d')}" if config['step'] != 'all_cohorts' else f"all-{pd.Timestamp.now().strftime('%m%d')}"
     wandb.init(
-        name=f"{config['run_id']}-{pd.Timestamp.now().strftime('%m%d')}",
+        name=name_run,
         tags=[config["run_id"]],
         project="aipal_validation_V3",
         mode="disabled" if config["debug"] else "online",
