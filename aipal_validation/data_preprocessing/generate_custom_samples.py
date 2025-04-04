@@ -48,6 +48,13 @@ def df_to_si(df, config, dict_key_name=None):
     return df
 
 
+def parse_dallas(df, config):
+    print(df.columns)
+    df = df_to_si(df, config, "dallas_codes_si")
+    df = df[df.age < 100]
+    df = df[df.MCV_fL < 130]
+    return df
+
 def parse_to_numeric(df, config, names=None, dropna=True):
     column_names = names if names else {v[3] for v in config["obs_codes_si"].values()}
     if not column_names:
@@ -183,7 +190,7 @@ def main(config):
         "rome": lambda df, config: (print("Rome: Nothing to do"), df)[1],
         "barcelona": lambda df, config: (print("Barcelona: Nothing to do"), df)[1],
         "maastricht": lambda df, config: parse_maastricht(df, config),
-        "dallas": lambda df, config: df_to_si(df, config),
+        "dallas": lambda df, config: parse_dallas(df, config),
         "melbourne": lambda df, config: parse_melbourne(df, config),
         "poland": lambda df, config: transform_age_poland(df, config),
         "sao_paulo": lambda df, config: parse_sao_paulo(df, config),
@@ -211,7 +218,8 @@ def main(config):
     column_names = {v[3] for v in config["obs_codes_si"].values()}
     if not column_names.issubset(df.columns):
         raise ValueError(
-            f"Columns {column_names} not found in the data, parsing failed."
+            f"Columns {column_names} not found in the data, parsing failed. "
+            f"Available columns: {df.columns}"
         )
 
     # Final processing
