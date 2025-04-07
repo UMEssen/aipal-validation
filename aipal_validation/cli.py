@@ -142,13 +142,12 @@ def run():
         logger.warning(
             "WARNING!!! Running in debug mode. Switch off debug for production."
         )
+    if config["step"] == "all_cohorts":
+        config['run_id'] = 'all_cohorts'
 
     config["root_dir"] = config["root_dir"] / config["run_id"]
 
-    if config["step"] == "all_cohorts":
-        config["task_dir"] = config["root_dir"] / "all"
-    else:
-        config["task_dir"] = config["root_dir"] / config["task"]
+    config["task_dir"] = config["root_dir"] / config["task"]
     config["task_dir"].mkdir(parents=True, exist_ok=True)
     logger.info(f"The outputs will be stored in {config['task_dir']}.")
 

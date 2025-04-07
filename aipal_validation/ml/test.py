@@ -330,11 +330,14 @@ def main(config):
         print(f"Paths: {paths}")
         for path in paths:
             df_small = pd.read_csv(path)
+            df_small['city'] = path.split('/')[-3]
+            if df_small['city'].str.contains('Vessen').any():
+                df_small = df_small[df_small['age'] < 18]
             data = pd.concat([data, df_small])
+        data.drop(columns=['recorded_date','encounter_start','encounter_end','patient_id','birth_date','condition_codes','condition_id','encounter_id'],inplace=True)
+
         logging.info(f"Data shape: {data.shape}")
-        all_dir = config["root_dir"] / "all"
-        os.makedirs(all_dir, exist_ok=True)
-        data.to_csv(all_dir / "predict.csv", index=False)
+        data.to_csv(config["task_dir"] / "predict.csv", index=False)
 
     else:
         data = pd.read_csv(config["task_dir"] / "predict.csv")
