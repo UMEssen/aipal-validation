@@ -3,6 +3,7 @@ import json
 import logging
 import pickle
 from pathlib import Path
+import subprocess
 
 import yaml
 
@@ -225,7 +226,7 @@ def run():
                 pickle.dump(config, of)
     else:
         # Custom pipeline in case data already exists
-        if config["step"] == "all":
+        if config["step"] == "all" and not config.get("eval_all"):
             config["step"] = "sampling+test"
             config["step"] = config["step"].split("+")
 
@@ -240,4 +241,8 @@ def run():
         test.main(config)
 
     if config.get("eval_all"):
-        test.main(config)
+        ## run all scipts in eval folder and save console output to file
+        print("Running all evaluation scripts...")
+        for file in Path("aipal_validation/eval").glob("*.py"):
+            print(f"Running {file}...")
+            subprocess.run(["python", file], check=True)

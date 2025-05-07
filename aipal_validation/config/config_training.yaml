@@ -106,15 +106,28 @@ melbourne_codes_si : {
 }
 
 dallas_codes_si : {
-    'MCV_fL ': ['fL', 1, 'fl', 'MCV_fL'],
+    'MCV_fL': ['fL', 1, 'fl', 'MCV_fL'],
     'PT % average': ['%', 1, '%', 'PT_percent'],
     'LDH_IU_L': ['U/L', 1, 'U/l', 'LDH_UI_L'],
     'MCHC_g_L': ['g/L', 1, 'g/l', 'MCHC_g_L'],
-    'WBC G/L ': ['/nl', 1, '/nl', 'WBC_G_L'],
+    'WBC G/L': ['/nl', 1, '/nl', 'WBC_G_L'],
     'Fibrinogen_g/L': ['g/L', 1, 'g/l', 'Fibrinogen_g_L'],
-    'Monocytes G/L ': ['/nl', 1, '/nl', 'Monocytes_G_L'],
+    'Monocytes G/L': ['/nl', 1, '/nl', 'Monocytes_G_L'],
     'Platelets G/L': ['/nl', 1, '/nl', 'Platelets_G_L'],
-    'Lymphocytes G/L ': ['/nl', 1, '/nl', 'Lymphocytes_G_L'],
+    'Lymphocytes G/L': ['/nl', 1, '/nl', 'Lymphocytes_G_L'],
+}
+
+lagos_codes_si: {
+    'MCV_fL': ['fl', 1, 'fl', 'MCV_fL'],
+    'PT_percent': ['%', 1, '%', 'PT_percent'],
+    'LDH_UI_L': ['U/l', 1, 'U/l', 'LDH_UI_L'],
+    'MCHC_g_L': ['g/l', 1, 'g/l', 'MCHC_g_L'],
+    'WBC_G_L': ['10^9/L', 1, '/nl', 'WBC_G_L'],
+    'Fibrinogen_g_L': ['g/l', 1, 'g/l', 'Fibrinogen_g_L'],
+    'Monocytes_G_L': ['10^9/L', 1, '/nl', 'Monocytes_G_L'],
+    'Platelets_G_L': ['10^9/L', 1, '/nl', 'Platelets_G_L'],
+    'Lymphocytes_G_L': ['10^9/L', 1, '/nl', 'Lymphocytes_G_L'],
+    'LDH_IU_L': ['U/l', 1, 'U/l', 'LDH_UI_L']
 }
 
 # prereq: codes values are alredy in si units

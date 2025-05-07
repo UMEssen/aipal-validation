@@ -265,7 +265,7 @@ class MulticentricOutlierDetector:
 def main():
     # Initialize pipeline
     detector = MulticentricOutlierDetector(
-        "/home/merengelke/aipal_validation/jupyter/publish/cfg.yaml"
+        "../aipal_validation/config/config_outlier.yaml"
     )
 
     # Prepare data splits

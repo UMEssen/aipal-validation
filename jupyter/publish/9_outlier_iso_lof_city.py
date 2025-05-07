@@ -463,7 +463,7 @@ class CityOutlierAnalyzer:
 def main():
     """Main function to run outlier analysis for all cities"""
     parser = argparse.ArgumentParser(description="Analyze outlier detection for all cities")
-    parser.add_argument("--config", type=str, default="/home/merengelke/aipal_validation/jupyter/publish/cfg.yaml",
+    parser.add_argument("--config", type=str, default="../aipal_validation/config/config_outlier.yaml",
                         help="Path to the configuration file")
     parser.add_argument("--output_dir", type=str, default="plots",
                         help="Directory to save the output figures")

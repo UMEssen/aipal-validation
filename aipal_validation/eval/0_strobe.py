@@ -1,15 +1,11 @@
 #%%
-
-
 import pandas as pd
 import os
 from util import load_data
 
-df_adults, config, features  = load_data(is_adult=True)
-df_kids, config, features  = load_data(is_adult=False)
+df_adults, config, features  = load_data(is_adult=True, filter_missing_values=False)
+df_kids, config, features  = load_data(is_adult=False, filter_missing_values=False)
 
-
-#%%
 df = pd.concat([df_kids, df_adults], axis=0)
 
 # Get the current script's directory
@@ -64,14 +60,10 @@ print(f"Children: {len(df[df.age <= 18])}")
 print(f"Classes: \n{df['class'].value_counts()}")
 
 
-# %%
 
 df_adults = df[df.age > 18]
 df_adults['class'].value_counts()
 
-# %%
 # get children classes
 df_kids = df[df.age <= 18]
 df_kids['class'].value_counts()
-
-# %%

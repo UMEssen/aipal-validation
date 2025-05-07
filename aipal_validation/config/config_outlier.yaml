@@ -10,5 +10,29 @@ feature_columns: ['Fibrinogen_g_L',
     'Monocytes_G_L',
     'Platelets_G_L']
 
-cities_countries: ['dallas', 'melbourne', 'maastricht', 'barcelona', 'bochum','wroclaw', 'kolkata', 'rome', 'salamanca', 'sao_paulo', 'turkey', 'buenos_aires', 'milano', 'suzhou', 'antananarivo', 'hannover', 'newcastle', 'lagos', 'Vessen' ]
-continent_mapping: {'dallas': 'north_america', 'melbourne': 'australia', 'maastricht': 'europe', 'barcelona': 'europe', 'Vessen': 'europe', 'bochum': 'europe', 'wroclaw': 'europe', 'kalkutta': 'asia', 'rome': 'europe', 'salamanca': 'europe', 'sao_paulo': 'south_america', 'turkey': 'asia', 'buenos_aires': 'south_america', 'suzhou': 'asia', 'milano': 'europe', 'africa': 'antananarivo', 'hannover': 'europe', 'newcastle': 'europe', 'lagos': 'africa'}
+cities_countries: ['dallas', 'melbourne', 'maastricht', 'barcelona', 'bochum','wroclaw', 'kolkata', 'rome', 'salamanca', 'sao_paulo', 'turkey', 'buenos_aires', 'milano', 'suzhou', 'antananarivo', 'hannover', 'newcastle', 'lagos', 'Vessen']
+
+# Outlier detection parameters
+outlier_params:
+  isolation_forest:
+    contamination: "auto"
+    random_state: 123
+  local_outlier_factor:
+    n_neighbors: 20
+    contamination: "auto"
+    novelty: True
+
+# Cutoffs from training config
+cutoffs:
+  - category: "ALL"
+    PPV: 0.9593636
+    NPV: 0.04462764
+    ACC: 0.4528432
+  - category: "AML"
+    PPV: 0.9448341
+    NPV: 0.02712490
+    ACC: 0.5001304
+  - category: "APL"
+    PPV: 0.7487954
+    NPV: 0.04154142
+    ACC: 0.3770665

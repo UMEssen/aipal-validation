@@ -175,6 +175,10 @@ def parse_wroclaw(df, config):
     df.sex = ["Male" if x == 0 else "Female" for x in df.sex]
     return df
 
+def parse_milano(df, config):
+    df.rename(columns={"LDH_IU_L": "LDH_UI_L"}, inplace=True)
+    return df
+
 
 def main(config):
     if skip_build(config):
@@ -197,10 +201,10 @@ def main(config):
         "salamanca": lambda df, config: (print("Salamanca: Nothing to do"), df)[1],
         "turkey": lambda df, config: (print("Turkey: Nothing to do"), df)[1],
         "buenos_aires": lambda df, config: parse_buenos_aires(df, config),
-        "kalkutta": lambda df, config: (print("Kalkutta: Nothing to do"), df)[1],
+        "kolkata": lambda df, config: (print("Kolkata: Nothing to do"), df)[1],
         "suzhou": lambda df, config: parse_suzhou(df, config),
         "bochum": lambda df, config: parse_bochum(df, config),
-        "milano": lambda df, config: (print("Milano: Nothing to do"), df)[1],
+        "milano": lambda df, config: parse_milano(df, config),
         "newcastle": lambda df, config: parse_newcastle(df, config),
         "wroclaw": lambda df, config: parse_wroclaw(df, config),
         "antananarivo": lambda df, config: parse_antananarivo(df, config),

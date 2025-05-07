@@ -8,7 +8,7 @@ from openpyxl.utils import get_column_letter
 # Get the project root directory (two levels up from this file)
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-def load_data(config_path='/home/merengelke/aipal_validation/aipal_validation/config/config_analysis.yaml', root_path='/local/work/merengelke/aipal/', filter_by_size=True, is_adult=True):
+def load_data(config_path='/home/merengelke/aipal_validation/aipal_validation/config/config_analysis.yaml', root_path='/local/work/merengelke/aipal/', filter_by_size=True, is_adult=True, filter_missing_values=True):
     """
     Load and preprocess data from multiple cohorts based on configuration.
 
@@ -40,7 +40,20 @@ def load_data(config_path='/home/merengelke/aipal_validation/aipal_validation/co
     config['is_adult'] = is_adult
 
     # Get paths for all cohorts
-    cities_countries = config['cities_countries']
+    cities_countries = []
+    # Try different possible keys that might exist in the config
+    for key in ['cities_countries', 'cities_country', 'city_countries', 'city_country']:
+        if key in config:
+            cities_countries = config[key]
+            break
+
+    # If no cities found, use default
+    if not cities_countries:
+        print("Warning: No cities/countries found in config file. Using default list.")
+        cities_countries = ['dallas', 'melbourne', 'maastricht', 'barcelona', 'bochum',
+                           'wroclaw', 'kolkata', 'rome', 'salamanca', 'sao_paulo', 'turkey',
+                           'buenos_aires', 'milano', 'suzhou', 'antananarivo', 'hannover',
+                           'newcastle', 'lagos', 'Vessen']
 
     # Only filter out certain cities for adult data
     if is_adult:
@@ -67,9 +80,27 @@ def load_data(config_path='/home/merengelke/aipal_validation/aipal_validation/co
         df = df[df['age'] <= 18]
 
     # remove samples with more than 20 % missing values
-    df_input_features = df[config['feature_columns']]
-    missing_samples = df_input_features.isna().sum(axis=1) > 0.2 * len(config['feature_columns'])
-    df = df[~missing_samples]
+    if filter_missing_values:
+        # Check for feature_columns key
+        feature_columns = []
+        for key in ['feature_columns', 'features', 'input_features']:
+            if key in config:
+                feature_columns = config[key]
+                break
+
+        # If no feature columns found, use default list
+        if not feature_columns:
+            print("Warning: No feature columns found in config file. Using default list.")
+            feature_columns = ['Fibrinogen_g_L', 'MCV_fL', 'Monocytes_percent', 'LDH_UI_L',
+                                'PT_percent', 'MCHC_g_L', 'Lymphocytes_G_L', 'age',
+                                'Monocytes_G_L', 'Platelets_G_L']
+
+        # Store the feature columns in config for later use
+        config['feature_columns'] = feature_columns
+
+        df_input_features = df[feature_columns]
+        missing_samples = df_input_features.isna().sum(axis=1) > 0.2 * len(feature_columns)
+        df = df[~missing_samples]
 
 
     df['city_country'] = df['city_country'].str.replace('_', ' ')
@@ -91,7 +122,7 @@ def load_data(config_path='/home/merengelke/aipal_validation/aipal_validation/co
         df = df.groupby('city_country').filter(lambda x: len(x) > 30)
 
     # Get feature columns from config
-    features = config['feature_columns']
+    features = config['feature_columns']  # This is safe now because we ensured it exists above
 
     return df, config, features
 

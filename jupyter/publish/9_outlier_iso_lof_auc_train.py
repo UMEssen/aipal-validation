@@ -457,7 +457,7 @@ def main():
     """Main function to generate the abstract figure"""
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Generate abstract figure for medical hematology conference")
-    parser.add_argument("--config", type=str, default="/home/merengelke/aipal_validation/jupyter/publish/cfg.yaml",
+    parser.add_argument("--config", type=str, default="../aipal_validation/config/config_outlier.yaml",
                         help="Path to the configuration file")
     parser.add_argument("--output", type=str, default="abstract_figure_train.png",
                         help="Path to save the output figure")

@@ -15,7 +15,7 @@ import openpyxl
 
 # Get the script's directory
 script_dir = os.path.dirname(os.path.abspath(__file__))
-config_path = os.path.join(script_dir, 'cfg.yaml')
+config_path = os.path.join(script_dir, '../aipal_validation/config/config_outlier.yaml')
 
 # Load configuration and set paths
 root_path = '/local/work/merengelke/aipal/'

@@ -8,14 +8,9 @@ from typing import Any, Dict, List, Optional, Tuple
 import pandas as pd
 import requests
 from fhir_pyrate import Ahoy
-from sqlalchemy import create_engine
 
 logger = logging.getLogger(__name__)
-metrics_url = (
-    f"postgresql://{os.environ['METRICS_USER']}:{os.environ['METRICS_PASSWORD']}@"
-    f"{os.environ['METRICS_HOSTNAME']}:{os.environ['METRICS_PORT']}/{os.environ['METRICS_DB']}"
-)
-engine = create_engine(metrics_url)
+
 auth = Ahoy(
     auth_method="env",
     username=os.environ["FHIR_USER"],

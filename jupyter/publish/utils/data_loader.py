@@ -3,7 +3,7 @@ import pandas as pd
 import yaml
 import os
 
-def load_data(config_path='cfg.yaml', root_path='/local/work/merengelke/aipal/', filter_by_size=True):
+def load_data(config_path='/home/merengelke/aipal_validation/aipal_validation/config/config_analysis.yaml', root_path='/local/work/merengelke/aipal/', filter_by_size=True, is_adult=True):
     """
     Load and preprocess data from multiple cohorts based on configuration.
 
@@ -50,6 +50,9 @@ def load_data(config_path='cfg.yaml', root_path='/local/work/merengelke/aipal/',
         df = df[df['age'] > 18]
     else:
         df = df[df['age'] <= 18]
+
+    if not is_adult:
+        config['is_adult'] = False
 
     df['city_country'] = df['city_country'].str.replace('_', ' ')
     df['city_country'] = df['city_country'].str.capitalize()

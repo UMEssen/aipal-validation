@@ -18,7 +18,7 @@ warnings.filterwarnings('ignore', category=RuntimeWarning, message='invalid valu
 sys.path.append(str(Path(__file__).parent.parent / "jupyter" / "publish" / "utils"))
 
 # Load the standardized feature names from config
-CONFIG_PATH = str(Path(__file__).parent.parent / "aipal_validation" / "config" / "config_analysis.yaml")
+CONFIG_PATH = str(Path(__file__).parent.parent / "config" / "config_analysis.yaml")
 with open(CONFIG_PATH, 'r') as f:
     config = yaml.safe_load(f)
 
@@ -526,11 +526,18 @@ def create_city_comparison_table(df, features, class_type):
 
     return result_df
 
-def main():
+def run_analysis(is_adult: bool):
+    """Runs the analysis for a specific cohort (adult or pediatric)."""
     # Load the data
+    print(f"--- Running analysis for {'Adult' if is_adult else 'Pediatric'} Cohort ---")
     print("Loading data...")
-    config_path = str(Path(__file__).parent.parent / "aipal_validation" / "config" / "config_analysis.yaml")
-    df, config, features = load_data(config_path=config_path, is_adult=True)
+    config_path = str(Path(__file__).parent.parent / "config" / "config_analysis.yaml")
+    # Load config manually to update is_adult before loading data
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+    config['is_adult'] = is_adult # Ensure config reflects the current cohort
+
+    df, _, features = load_data(config_path=config_path, is_adult=is_adult)
 
     # Get unique cohorts
     cohorts = df['city_country'].unique()
@@ -541,17 +548,19 @@ def main():
     # Create combined analysis table
     print("\nCreating combined analysis table...")
     combined_table = create_combined_analysis_table(df, analysis_features)
-    output_dir = os.path.join(os.path.dirname(__file__), 'analysis_results')
+    # Use the is_adult flag directly for output dir and suffix
+    title_suffix = 'adult' if is_adult else 'pediatric'
+    output_dir = os.path.join(config['root_results'], f'1_reference_comparison_{title_suffix}')
     os.makedirs(output_dir, exist_ok=True)
 
     # Save to CSV (original format)
-    title_suffix = 'adult' if config['is_adult'] else 'pediatric'
-    combined_table.to_csv(os.path.join(output_dir, f'0_combined_analysis_{title_suffix}.csv'), index=False)
+    csv_path = os.path.join(output_dir, f'0_combined_analysis_{title_suffix}.csv')
+    combined_table.to_csv(csv_path, index=False)
 
     # Save to formatted Excel
     excel_path = os.path.join(output_dir, f'0_combined_analysis_{title_suffix}.xlsx')
     save_to_excel(combined_table, excel_path)
-    print(f"Combined analysis table saved to CSV: {output_dir}/0_combined_analysis_{title_suffix}.csv")
+    print(f"Combined analysis table saved to CSV: {csv_path}")
     print(f"Formatted Excel file saved to: {excel_path}")
 
     # Create and save city-by-city comparison tables for each class
@@ -561,12 +570,13 @@ def main():
         city_table = create_city_comparison_table(df, analysis_features, class_type)
 
         # Save to CSV
-        city_table.to_csv(os.path.join(output_dir, f'1_city_comparison_{class_type}_{title_suffix}.csv'), index=False)
+        city_csv_path = os.path.join(output_dir, f'1_city_comparison_{class_type}_{title_suffix}.csv')
+        city_table.to_csv(city_csv_path, index=False)
 
         # Save to formatted Excel
-        excel_path = os.path.join(output_dir, f'1_city_comparison_{class_type}_{title_suffix}.xlsx')
-        save_to_excel(city_table, excel_path)
-        print(f"City comparison table for {class_type} saved to: {excel_path}")
+        city_excel_path = os.path.join(output_dir, f'1_city_comparison_{class_type}_{title_suffix}.xlsx')
+        save_to_excel(city_table, city_excel_path)
+        print(f"City comparison table for {class_type} saved to: {city_excel_path}")
 
     # Analyze class distribution
     print("\n=== Class Distribution Analysis by Cohort ===\n")
@@ -582,7 +592,7 @@ def main():
     print("\n=== Feature Distribution Analysis by Cohort and Disease Class ===\n")
 
     # Create plots directory
-    plots_dir = os.path.join(os.path.dirname(__file__), 'distribution_plots')
+    plots_dir = os.path.join(output_dir, 'distribution_plots')
     os.makedirs(plots_dir, exist_ok=True)
 
     # Analyze each feature
@@ -608,7 +618,7 @@ def main():
                 # Flag significant differences in combined analysis
                 if abs(diff_stats['mean_diff_percent']) > 50:
                     print("⚠️ WARNING: Combined data shows large mean difference from reference values")
-                if abs(diff_stats['sd_diff_percent']) > 100:  # More than double thehe reference SD
+                if abs(diff_stats['sd_diff_percent']) > 100:  # More than double the reference SD
                     print("⚠️ WARNING: Combined data shows much higher variability than reference")
 
         print("\nIndividual Cohort Analysis:")
@@ -669,7 +679,9 @@ def main():
                 if abs(diff_stats['mean_diff_percent']) > 50 or abs(diff_stats['sd_diff_percent']) > 100:
                     print(f"\n- {feature} ({STANDARDIZED_FEATURES[feature]['unit']}) in {class_type} for combined data:")
                     print(f"  Mean difference: {diff_stats['mean_diff_percent']:.1f}%")
-                    print(f"  SD ratio: {(combined_stats['sd']/ref_values['sd']):.1f}x reference")
+                    # Avoid division by zero if ref_values['sd'] is zero
+                    sd_ratio = (combined_stats['sd'] / ref_values['sd']) if ref_values['sd'] != 0 else float('inf')
+                    print(f"  SD ratio: {sd_ratio:.1f}x reference")
 
     print("\nIndividual Cohort Discrepancies:")
     for feature in analysis_features:
@@ -679,11 +691,20 @@ def main():
                 cohort_stats, _, ref_values = result
                 for cohort, stats in cohort_stats.items():
                     mean_diff = stats['mean_diff_ref_percent']
+                    # Avoid division by zero if ref_values['sd'] is zero
+                    sd_ratio = (stats['std'] / ref_values['sd']) if ref_values['sd'] != 0 else float('inf')
                     if (abs(mean_diff) > 50 and not np.isinf(mean_diff)) or abs(stats['std']) > ref_values['sd'] * 2:
                         mean_diff_str = f"{mean_diff:.1f}%" if not np.isinf(mean_diff) else "∞%" if mean_diff > 0 else "-∞%"
                         print(f"\n- {feature} ({STANDARDIZED_FEATURES[feature]['unit']}) in {class_type} for {cohort}:")
                         print(f"  Mean difference: {mean_diff_str}")
-                        print(f"  SD ratio: {(stats['std']/ref_values['sd']):.1f}x reference")
+                        print(f"  SD ratio: {sd_ratio:.1f}x reference")
+
+def main():
+    """Runs the analysis for both adult and pediatric cohorts."""
+    print("Starting reference comparison analysis...")
+    run_analysis(is_adult=True)
+    run_analysis(is_adult=False)
+    print("\nReference comparison analysis finished for both cohorts.")
 
 if __name__ == "__main__":
     main()
