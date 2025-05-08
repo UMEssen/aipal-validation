@@ -1,0 +1,16 @@
+is_adult: False
+feature_columns: ['Fibrinogen_g_L',
+    'MCV_fL',
+    'Monocytes_percent',
+    'LDH_UI_L',
+    'PT_percent',
+    'MCHC_g_L',
+    'Lymphocytes_G_L',
+    'age',
+    'Monocytes_G_L',
+    'Platelets_G_L']
+
+cities_countries: ['dallas', 'melbourne', 'maastricht', 'barcelona', 'bochum','wroclaw', 'kolkata', 'rome', 'salamanca', 'sao_paulo', 'turkey', 'buenos_aires', 'milano', 'suzhou', 'antananarivo', 'hannover', 'newcastle', 'lagos', 'Vessen' ]
+continent_mapping: {'dallas': 'north_america', 'melbourne': 'australia', 'maastricht': 'europe', 'barcelona': 'europe', 'Vessen': 'europe', 'bochum': 'europe', 'wroclaw': 'europe', 'kalkutta': 'asia', 'rome': 'europe', 'salamanca': 'europe', 'sao_paulo': 'south_america', 'turkey': 'asia', 'buenos_aires': 'south_america', 'suzhou': 'asia', 'milano': 'europe', 'africa': 'antananarivo', 'hannover': 'europe', 'newcastle': 'europe', 'lagos': 'africa'}
+
+root_results: '/local/work/merengelke/aipal/results'

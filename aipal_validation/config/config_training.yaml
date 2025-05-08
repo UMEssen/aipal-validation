@@ -1,0 +1,158 @@
+# Set task
+task: retrain_trainset
+debug: False
+
+# General params for setting the folders and the extraction
+run_id: "all_cohorts"
+
+root_dir: "/data"
+step: "all_cohorts"
+
+# Enforce run and not read cache
+rerun_cache: False
+skip_validation: False
+
+LK_codes: {
+    "ALL": ['C91.00', 'C91.30', 'C91.50', 'C91.60', 'C91.80', 'C91.90'],
+    "AML": ['C92.00', 'C92.50', 'C92.60', 'C92.70', 'C92.80', 'C92.90'],
+    "APL": ['C92.40']
+}
+
+# Procedures which need to be filterd within a encounter so that we are sure that the patient has no been classified
+excluded_procedure_codes: ['8-860', '8-863']
+
+# unit siwsslab to si
+# siwsslab_label: [unit, factor, si_unit, aipal_label]
+obs_codes_si:
+  zMCV: ['fl', 1, 'fl', 'MCV_fL']
+  zTPZCS: ['%', 1, '%', 'PT_percent']
+  zLDH: ['U/l', 1, 'U/l', 'LDH_UI_L']
+  zMCHC: ['g/dl', 10, 'g/l', 'MCHC_g_L']
+  zLEUA: ['/nl', 1, '/nl', 'WBC_G_L']
+  zFIBRCS: ['mg/dl', 0.01, 'g/l', 'Fibrinogen_g_L']
+  zMON#: ['/nl', 1, '/nl', 'Monocytes_G_L']
+  zTHRA: ['/nl', 1, '/nl', 'Platelets_G_L']
+  zLYM#: ['/nl', 1, '/nl', 'Lymphocytes_G_L']
+
+salamanca_codes_si:
+  MCV_fL: ['fl', 1, 'fl', 'MCV_fL']
+  PT_percent: ['%', 1, '%', 'PT_percent']
+  LDH_UI_L: ['U/l', 1, 'U/l', 'LDH_UI_L']
+  MCHC_g_dL: ['g/dl', 10, 'g/l', 'MCHC_g_L']
+  WBC_G_L: ['/nl', 1, '/nl', 'WBC_G_L']
+  Fibrinogen_mg_dL: ['mg/dl', 0.01, 'g/l', 'Fibrinogen_g_L']
+  Monocytes_G_L: ['/nl', 1, '/nl', 'Monocytes_G_L']
+  Platelets_G_L: ['/nl', 1, '/nl', 'Platelets_G_L']
+  Lymphocytes_G_L: ['/nl', 1, '/nl', 'Lymphocytes_G_L']
+
+rome_codes_si : {
+    'MCV (fL)': ['fL', 1, 'fL', 'MCV_fL'],
+    'Prothrombine time (%)': ['%', 1, '%', 'PT_percent'],
+    'LDH (UI/L)': ['U/L', 1, 'U/L', 'LDH_UI_L'],
+    'MCHC (g/L)': ['g/L', 1, 'g/L', 'MCHC_g_L'],
+    'WBC (*103/mm3)': ['*10^3/mm3', 1, '/nl', 'WBC_G_L'],
+    'Fibrinogen (g/L)': ['g/L', 1, 'g/L', 'Fibrinogen_g_L'],
+    'Monocytes (*103/mm3)': ['*10^3/mm3', 1, '/nl', 'Monocytes_G_L'],
+    'Platelets (*103/mm3)': ['*10^3/mm3', 1, '/nl', 'Platelets_G_L'],
+    'Lymphocites (*103/mm3)': ['*10^3/mm3', 1, '/nl', 'Lymphocytes_G_L']
+}
+
+suzhou_codes_si : {
+    'MCV_fL(82-100)': ['fL', 1, 'fL', 'MCV_fL'],
+    'PT_%_AVG': ['%', 1, '%', 'PT_percent'],
+    'LDH_U/L': ['U/L', 1, 'U/L', 'LDH_UI_L'],
+    'MCHC_g/L': ['g/dl', 10, 'g/L', 'MCHC_g_L'],
+    'WBC_10E9/L': ['10^9/L', 1, '/nl', 'WBC_G_L'],
+    'Fibrinogen_g/L': ['g/L', 1, 'g/L', 'Fibrinogen_g_L'],
+    'Monocytes_10E9/L': ['10^9/L', 1, '/nl', 'Monocytes_G_L'],
+    'Platelets_10E9/L': ['10^9/L', 1, '/nl', 'Platelets_G_L'],
+    'Lymphocytes_10E9/L': ['10^9/L', 1, '/nl', 'Lymphocytes_G_L']
+}
+
+maastricht_codes_si : {
+    'MCV_fL ': ['fL', 1, 'fL', 'MCV_fL'],
+    'PT percent ': ['%', 1, '%', 'PT_percent'],
+    'LDH_IU_L': ['U/L', 1, 'U/L', 'LDH_UI_L'],
+    'MCHC_g_L': ['g/dl', 1, 'g/L', 'MCHC_g_L'],
+    'WBC G/L ': ['10^9/L', 1, '/nl', 'WBC_G_L'],
+    'Fibrinogen_g/L': ['g/L', 1, 'g/L', 'Fibrinogen_g_L'],
+    'Monocytes G/L ': ['10^9/L', 1, '/nl', 'Monocytes_G_L'],
+    'Platelets G/L ': ['10^9/L', 1, '/nl', 'Platelets_G_L'],
+    'Lymphocytes G/L': ['10^9/L', 1, '/nl', 'Lymphocytes_G_L'],
+}
+
+wroclaw_codes_si : {
+    'MCV (fL)': ['fL', 1, 'fL', 'MCV_fL'],
+    'PT (%)': ['%', 1, '%', 'PT_percent'],
+    'LDH (IU/L)': ['U/L', 1, 'U/L', 'LDH_UI_L'],
+    'MCHC, g/dl': ['g/dl', 10, 'g/L', 'MCHC_g_L'],
+    'WBC 10x9/L': ['10^9/L', 1, '/nl', 'WBC_G_L'],
+    'fibrinogen g/L': ['g/L', 1, 'g/L', 'Fibrinogen_g_L'],
+    'monocyte counts (10x9/L)': ['10^9/L', 1, '/nl', 'Monocytes_G_L'],
+    'PLT 10x9/L': ['10^9/L', 1, '/nl', 'Platelets_G_L'],
+    'lymphocyte 10x9/L': ['10^9/L', 1, '/nl', 'Lymphocytes_G_L']
+}
+
+melbourne_codes_si : {
+    'MCV_fL ': ['fL', 1, 'fL', 'MCV_fL'],
+    'PT_percent': ['%', 1, '%', 'PT_percent'],
+    'LDH_IU_L': ['U/L', 1, 'U/L', 'LDH_UI_L'],
+    'MCHC_g_L': ['g/dl', 1, 'g/L', 'MCHC_g_L'],
+    'WBC G/L': ['10^9/L', 1, '/nl', 'WBC_G_L'],
+    'Fibrinogen_g/L': ['g/L', 1, 'g/L', 'Fibrinogen_g_L'],
+    'Monocytes G/L ': ['10^9/L', 1, '/nl', 'Monocytes_G_L'],
+    'Platelets G/L': ['10^9/L', 1, '/nl', 'Platelets_G_L'],
+    'Lymphocytes G/L ': ['10^9/L', 1, '/nl', 'Lymphocytes_G_L'],
+}
+
+dallas_codes_si : {
+    'MCV_fL': ['fL', 1, 'fl', 'MCV_fL'],
+    'PT % average': ['%', 1, '%', 'PT_percent'],
+    'LDH_IU_L': ['U/L', 1, 'U/l', 'LDH_UI_L'],
+    'MCHC_g_L': ['g/L', 1, 'g/l', 'MCHC_g_L'],
+    'WBC G/L': ['/nl', 1, '/nl', 'WBC_G_L'],
+    'Fibrinogen_g/L': ['g/L', 1, 'g/l', 'Fibrinogen_g_L'],
+    'Monocytes G/L': ['/nl', 1, '/nl', 'Monocytes_G_L'],
+    'Platelets G/L': ['/nl', 1, '/nl', 'Platelets_G_L'],
+    'Lymphocytes G/L': ['/nl', 1, '/nl', 'Lymphocytes_G_L'],
+}
+
+lagos_codes_si: {
+    'MCV_fL': ['fl', 1, 'fl', 'MCV_fL'],
+    'PT_percent': ['%', 1, '%', 'PT_percent'],
+    'LDH_UI_L': ['U/l', 1, 'U/l', 'LDH_UI_L'],
+    'MCHC_g_L': ['g/l', 1, 'g/l', 'MCHC_g_L'],
+    'WBC_G_L': ['10^9/L', 1, '/nl', 'WBC_G_L'],
+    'Fibrinogen_g_L': ['g/l', 1, 'g/l', 'Fibrinogen_g_L'],
+    'Monocytes_G_L': ['10^9/L', 1, '/nl', 'Monocytes_G_L'],
+    'Platelets_G_L': ['10^9/L', 1, '/nl', 'Platelets_G_L'],
+    'Lymphocytes_G_L': ['10^9/L', 1, '/nl', 'Lymphocytes_G_L'],
+    'LDH_IU_L': ['U/l', 1, 'U/l', 'LDH_UI_L']
+}
+
+# prereq: codes values are alredy in si units
+merge_codes:
+  zMON# : ['zMONOMA']
+  zLYM# : ['zLYMPMA']
+
+eval_accumulation_steps: 5
+
+# folders to clear on each run
+folders_to_clear: [""]
+
+# Sampling
+num_processes: 30
+
+cutoffs:
+  - category: "ALL"
+    PPV: 0.9593636
+    NPV: 0.04462764
+    ACC: 0.4528432
+  - category: "AML"
+    PPV: 0.9448341
+    NPV: 0.02712490
+    ACC: 0.5001304
+  - category: "APL"
+    PPV: 0.7487954
+    NPV: 0.04154142
+    ACC: 0.3770665

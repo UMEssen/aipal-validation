@@ -1,0 +1,38 @@
+is_adult: True
+feature_columns: ['Fibrinogen_g_L',
+    'MCV_fL',
+    'Monocytes_percent',
+    'LDH_UI_L',
+    'PT_percent',
+    'MCHC_g_L',
+    'Lymphocytes_G_L',
+    'age',
+    'Monocytes_G_L',
+    'Platelets_G_L']
+
+cities_countries: ['dallas', 'melbourne', 'maastricht', 'barcelona', 'bochum','wroclaw', 'kolkata', 'rome', 'salamanca', 'sao_paulo', 'turkey', 'buenos_aires', 'milano', 'suzhou', 'antananarivo', 'hannover', 'newcastle', 'lagos', 'Vessen']
+
+# Outlier detection parameters
+outlier_params:
+  isolation_forest:
+    contamination: "auto"
+    random_state: 123
+  local_outlier_factor:
+    n_neighbors: 20
+    contamination: "auto"
+    novelty: True
+
+# Cutoffs from training config
+cutoffs:
+  - category: "ALL"
+    PPV: 0.9593636
+    NPV: 0.04462764
+    ACC: 0.4528432
+  - category: "AML"
+    PPV: 0.9448341
+    NPV: 0.02712490
+    ACC: 0.5001304
+  - category: "APL"
+    PPV: 0.7487954
+    NPV: 0.04154142
+    ACC: 0.3770665

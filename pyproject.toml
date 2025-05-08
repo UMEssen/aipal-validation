@@ -1,0 +1,56 @@
+[tool.poetry]
+name = "aipal-validation"
+readme = "README.md"
+version = "0.2.0"
+license = "MIT"
+description = "A FHIR based validation pipeline for AIPAL"
+authors = ["Merlin Engelke <Merlin.Engelke@uk-essen.de>"]
+repository = "https://github.com/UMEssen/aipal-validation"
+keywords = ["fhir", "validation", "healthcare", "aipal"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Medical Science Apps."
+]
+
+[tool.poetry.scripts]
+aipal_validation = "aipal_validation.cli:run"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fhir-pyrate = {git = "https://github.com/UMEssen/FHIR-PYrate.git", branch = "main"}
+wandb = "^0.15.8"
+pyyaml = "^6.0.1"
+python-dotenv = "^1.0.0"
+psycopg2-binary = "^2.9.7"
+matplotlib = "^3.8.0"
+scikit-learn = "^1.4.2"
+openpyxl = "^3.1.3"
+xgboost = "^2.1.0"
+shap = "^0.46.0"
+ruff = "^0.9.8"
+seaborn = "^0.13.2"
+tabulate = "^0.9.0"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.5.0"
+flake8 = "^6.1.0"
+mypy = "^1.5.1"
+black = "^23.1.0"
+jupyter = "^1.0.0"
+isort = "^5.12.0"  # Explicitly included to match the `isort` configuration
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[virtualenvs]
+create = true
+in-project = true
+
+[tool.isort]
+profile = "black"
+line_length = 88
