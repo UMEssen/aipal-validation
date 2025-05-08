@@ -1,10 +1,20 @@
 [tool.poetry]
-name = "AIPAL_Validation"
+name = "aipal-validation"
 readme = "README.md"
 version = "0.2.0"
-license = "MIT License"
+license = "MIT"
 description = "A FHIR based validation pipeline for AIPAL"
 authors = ["Merlin Engelke <Merlin.Engelke@uk-essen.de>"]
+repository = "https://github.com/UMEssen/aipal-validation"
+keywords = ["fhir", "validation", "healthcare", "aipal"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Medical Science Apps."
+]
 
 [tool.poetry.scripts]
 aipal_validation = "aipal_validation.cli:run"
