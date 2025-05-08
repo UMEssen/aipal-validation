@@ -32,7 +32,7 @@ if (is_outlier_all) {
 }
 
 # Load model and predictions
-res_list <- readRDS("r/221003_Final_model_res_list.rds")
+res_list <- readRDS("aipal_validation/r/221003_Final_model_res_list.rds")
 model <- res_list$final_model
 
 # Read sample data

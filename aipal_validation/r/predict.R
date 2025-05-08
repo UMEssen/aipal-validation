@@ -7,7 +7,7 @@ sessionInfo()
 
 # Load model, predictions, config
 config <- yaml.load_file("aipal_validation/config/config_training.yaml")
-res_list <- readRDS("r/221003_Final_model_res_list.rds")
+res_list <- readRDS("aipal_validation/r/221003_Final_model_res_list.rds")
 model <- res_list$final_model
 root_dir <- sub("^/", "", config$root_dir)
 root_dir <- normalizePath(file.path(getwd(), "..", root_dir))

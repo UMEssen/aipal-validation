@@ -113,7 +113,7 @@ def parse_args_local(config) -> argparse.Namespace:
     parser.add_argument(
         "--r_script",
         type=str,
-        default="r/predict.R",
+        default="aipal_validation/r/predict.R",
         help="Path to R script for prediction",
     )
     parser.add_argument(
@@ -168,7 +168,7 @@ def run():
 
         logger.info("Starting model retraining for all pediatric cohorts...")
         # Explicitly set the R script for retraining, overriding any default from args
-        config["r_script"] = "r/retrain_model.R"
+        config["r_script"] = "aipal_validation/r/retrain_model.R"
 
         try:
             run_r_script(config)
@@ -213,7 +213,7 @@ def run():
 
         if not is_outlier_all:
             logger.info("Sample is not an outlier for all classes, running prediction...")
-            config["r_script"] = "r/predict_with_outlier.R"  # Use outlier-specific R script
+            config["r_script"] = "aipal_validation/r/predict_with_outlier.R"  # Use outlier-specific R script
             config["r_script_args"] = [config["sample"]]  # Pass sample file path as argument
             run_r_script(config)
         else:

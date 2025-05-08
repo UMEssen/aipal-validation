@@ -14,7 +14,7 @@ root_dir <- normalizePath(file.path(getwd(), "..", root_dir))
 # CLI sets config$run_id to 'all_cohorts' and config$task to 'retrain'
 working_dir <- file.path(root_dir, "all_cohorts", "retrain")
 data_file_path <- file.path(working_dir, "samples.csv")
-output_dir <- "r"  # Save outputs to the r/ directory
+output_dir <- "aipal_validation/r"  # Save outputs to the aipal_validation/r/ directory
 model_output_name <- "retrained_xgb_model.rds"
 train_split_output_name <- "pediatric_train_samples.csv"
 test_split_output_name <- "pediatric_test_samples.csv"

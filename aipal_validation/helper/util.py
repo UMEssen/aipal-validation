@@ -100,7 +100,7 @@ def run_r_script(config):
         logger.warning("WARNING!!! Running in debug mode. Switch off debug for production.")
 
     # Get R script path from config, default to predict.R
-    r_script_path = config.get("r_script", "r/predict.R")
+    r_script_path = config.get("r_script", "aipal_validation/r/predict.R")
 
     # Get additional arguments for R script
     r_script_args = config.get("r_script_args", [])
@@ -110,7 +110,7 @@ def run_r_script(config):
 
     try:
         # Skip predict.csv check for outlier prediction script
-        if r_script_path == "r/predict_with_outlier.R":
+        if r_script_path == "aipal_validation/r/predict_with_outlier.R":
             logging.info("Running outlier prediction script...")
             result = subprocess.run(command, capture_output=True, text=True, check=True)
             logging.info("R script output: %s", result.stdout)

@@ -41,6 +41,20 @@ AIPAL Validator is a tool designed to streamline the validation process for [AIP
     python -m aipal_validation --task aipal --step [all,data,sampling,test]
     ```
 
+## Project Structure
+
+The project has the following structure:
+
+- `aipal_validation/`: Main package containing all functionality
+  - `r/`: Contains all R scripts for prediction and model training (moved from root directory)
+  - `config/`: Configuration files
+  - `data_preprocessing/`: Data preprocessing modules
+  - `eval/`: Evaluation modules
+  - `fhir/`: FHIR-related modules
+  - `ml/`: Machine learning modules
+  - `outlier/`: Outlier detection modules
+  - `helper/`: Utility functions
+
 # Importing Data from Excel Without a Firemetrics Server
 
 If you don't have a Firemetrics server running and want to import data from an Excel sheet, follow these steps:
@@ -105,5 +119,5 @@ To retrain the AIPAL model with your dataset:
 The retraining process will:
 - Split your data into training and testing sets
 - Train an XGBoost model on the pediatric subset (age < 18)
-- Save the retrained model and prediction outputs
+- Save the retrained model and prediction outputs to the `aipal_validation/r/` directory
 - Perform evaluation on the test set
