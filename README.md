@@ -69,3 +69,41 @@ If you don't have a Firemetrics server running and want to import data from an E
      ```bash
      python -m aipal_validation --task aipal --step test
      ```
+
+# Outlier Detection
+
+To run outlier detection on your dataset and identify potential anomalies:
+
+1. **Local Setup:**
+   ```bash
+   poetry run aipal_validation --task outlier --step detect
+   ```
+
+2. **Docker Setup:**
+   ```bash
+   docker compose run aipal bash
+   python -m aipal_validation --task outlier --step detect
+   ```
+
+The outlier detection uses isolation forest and local outlier factor (LOF) algorithms to identify samples that deviate significantly from the expected patterns in each class.
+
+# Model Retraining (on pediatric subset)
+
+To retrain the AIPAL model with your dataset:
+
+1. **Local Setup:**
+   ```bash
+   poetry run aipal_validation --task retrain --step all
+   ```
+
+2. **Docker Setup:**
+   ```bash
+   docker compose run aipal bash
+   python -m aipal_validation --task retrain --step all
+   ```
+
+The retraining process will:
+- Split your data into training and testing sets
+- Train an XGBoost model on the pediatric subset (age < 18)
+- Save the retrained model and prediction outputs
+- Perform evaluation on the test set

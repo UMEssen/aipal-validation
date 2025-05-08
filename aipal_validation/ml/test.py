@@ -268,8 +268,9 @@ class LeukemiaModelEvaluator:
             .replace("   ", ":")
         )
 
-        tbl_string = f"{cutoff_type} - {self.ds_name}/{self.config['run_id']} - {len(data)}: {ds_counts}"
-        self.log_to_wandb(results, phase=tbl_string)
+        tbl_base_str = f"{cutoff_type} - {self.ds_name}/{self.config['run_id']} - {len(data)}: {ds_counts}"
+        tbl_str = f"Retrained: {tbl_base_str}" if self.config['task'] == 'retrain' else tbl_base_str
+        self.log_to_wandb(results, phase=tbl_str)
         return results
 
     def prediction_data_pruner(self, threshold=0):
@@ -302,6 +303,40 @@ class LeukemiaModelEvaluator:
         )
 
         return self.data
+
+def run_evaluation(config, ds_dict, cutoff_dict):
+    results_df = pd.DataFrame()
+    for ds_name, ds in ds_dict.items():
+        evaluator = LeukemiaModelEvaluator(ds, config, ds_name)
+        ds = evaluator.prediction_data_pruner(threshold=0.2)
+        LeukemiaModelEvaluator.calculate_auc(ds)
+
+        for cutoff_type, cutoff_metric in cutoff_dict.items():
+            results = evaluator.bootstrap_metrics(
+                cutoff_type,
+                cutoff_metric,
+                iterations=2000 if not config["debug"] else 1,
+            )
+
+            if results is None:
+                continue
+
+            logging.info(f"{cutoff_type} - {ds_name}")
+            results_copy = results.copy()
+            # round all numbers to 2 decimals
+            for cat, metrics in results_copy.items():
+                for metric, values in metrics.items():
+                    results_copy[cat][metric] = [round(val, 2) for val in values]
+            logging.info(
+                f"AUC Scores {ds_name} ALL: {results_copy['ALL']['AUC'][0]}, AML: {results_copy['AML']['AUC'][0]}, APL: {results_copy['APL']['AUC'][0]}"
+            )
+            logging.info(f"Results: {results_copy}")
+
+            results_dict = {
+                f"{cutoff_type} - {ds_name}": results_copy,
+            }
+            results_df = pd.concat([results_df, pd.DataFrame.from_dict(results_dict)])
+    return results_df
 
 
 def main(config):
@@ -355,35 +390,23 @@ def main(config):
         ds_dict = {"adults": data_adults}
 
     results_df = pd.DataFrame()
-    for ds_name, ds in ds_dict.items():
-        evaluator = LeukemiaModelEvaluator(ds, config, ds_name)
-        ds = evaluator.prediction_data_pruner(threshold=0.2)
-        LeukemiaModelEvaluator.calculate_auc(ds)
 
-        for cutoff_type, cutoff_metric in cutoff_dict.items():
-            results = evaluator.bootstrap_metrics(
-                cutoff_type,
-                cutoff_metric,
-                iterations=2000 if not config["debug"] else 1,
-            )
+    if config['task'] == 'retrain': # Note: Retraining is done for pediatric cohort only
+        # This is to evaluate of the retrained model
+        wandb.log({"info": "Running retrained model evaluation"})
+        logging.info("Running retrained model evaluation")
+        results_df = run_evaluation(config, ds_dict, cutoff_dict)
+        results_df.to_csv(config["task_dir"] / "results_retrain.csv")
 
-            if results is None:
-                continue
+        ds_dict['kids'] = ds_dict['kids'].drop(columns=['prediction.ALL', 'prediction.AML', 'prediction.APL'])
+        ds_dict['kids'] = ds_dict['kids'].rename(columns={'prediction.base.ALL': 'prediction.ALL', 'prediction.base.AML': 'prediction.AML', 'prediction.base.APL': 'prediction.APL'})
 
-            logging.info(f"{cutoff_type} - {ds_name}")
-            results_copy = results.copy()
-            # round all numbers to 2 decimals
-            for cat, metrics in results_copy.items():
-                for metric, values in metrics.items():
-                    results_copy[cat][metric] = [round(val, 2) for val in values]
-            logging.info(
-                f"AUC Scores {ds_name} ALL: {results_copy['ALL']['AUC'][0]}, AML: {results_copy['AML']['AUC'][0]}, APL: {results_copy['APL']['AUC'][0]}"
-            )
-            logging.info(f"Results: {results_copy}")
+        # This is to evaluate of the base model
+        logging.info("Running base model evaluation")
+        wandb.log({"info": "Running base model evaluation"})
+        results_df = run_evaluation(config, ds_dict, cutoff_dict)
+        results_df.to_csv(config["task_dir"] / "results_base.csv")
 
-            results_dict = {
-                f"{cutoff_type} - {ds_name}": results_copy,
-            }
-            results_df = pd.concat([results_df, pd.DataFrame.from_dict(results_dict)])
-
-    results_df.to_csv(config["task_dir"] / "results.csv")
+    else:
+        run_evaluation(config, ds_dict, cutoff_dict)
+        results_df.to_csv(config["task_dir"] / "results.csv")

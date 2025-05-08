@@ -23,6 +23,9 @@ pipelines = {
         "generate_custom": generate_custom_samples.main,
         "test": test.main,
     },
+    "retrain": {
+        "test": test.main,
+    },
 }
 
 LOG_LEVEL = logging.INFO
@@ -159,6 +162,20 @@ def run():
     )
     fh.setFormatter(formatter)
     logging.getLogger().addHandler(fh)
+
+    # Handle retraining task for all_cohorts
+    if config.get("task") == "retrain" and config.get("step") == "all_cohorts":
+
+        logger.info("Starting model retraining for all pediatric cohorts...")
+        # Explicitly set the R script for retraining, overriding any default from args
+        config["r_script"] = "r/retrain_model.R"
+
+        try:
+            run_r_script(config)
+            logger.info("Retraining script executed successfully.")
+        except Exception as e:
+            logger.error(f"Error running the R retraining script: {e}")
+        return
 
     # Handle outlier model training
     if config.get("train_outlier"):

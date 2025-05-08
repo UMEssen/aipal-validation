@@ -1,12 +1,12 @@
 # Set task
-task: aipal
+task: retrain_trainset
 debug: False
 
 # General params for setting the folders and the extraction
-run_id: "wroclaw"
+run_id: "all_cohorts"
 
 root_dir: "/data"
-step: "all"
+step: "all_cohorts"
 
 # Enforce run and not read cache
 rerun_cache: False
