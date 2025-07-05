@@ -1,0 +1,46 @@
+# Configuration for synthetic test data
+task: aipal
+debug: True
+run_id: "synthetic_test_data"
+root_dir: "."
+step: "sampling+test"
+
+# Core settings
+rerun_cache: True
+num_processes: 2
+
+# Direct mapping for synthetic test data columns
+direct_codes_si:
+  MCV_fL: ['fl', 1, 'fl', 'MCV_fL']
+  PT_percent: ['%', 1, '%', 'PT_percent']
+  LDH_UI_L: ['U/l', 1, 'U/l', 'LDH_UI_L']
+  MCHC_g_L: ['g/l', 1, 'g/l', 'MCHC_g_L']
+  WBC_G_L: ['/nl', 1, '/nl', 'WBC_G_L']
+  Fibrinogen_g_L: ['g/l', 1, 'g/l', 'Fibrinogen_g_L']
+  Monocytes_G_L: ['/nl', 1, '/nl', 'Monocytes_G_L']
+  Platelets_G_L: ['/nl', 1, '/nl', 'Platelets_G_L']
+  Lymphocytes_G_L: ['/nl', 1, '/nl', 'Lymphocytes_G_L']
+
+# Use direct_codes_si as obs_codes_si for compatibility
+obs_codes_si:
+  MCV_fL: ['fl', 1, 'fl', 'MCV_fL']
+  PT_percent: ['%', 1, '%', 'PT_percent']
+  LDH_UI_L: ['U/l', 1, 'U/l', 'LDH_UI_L']
+  MCHC_g_L: ['g/l', 1, 'g/l', 'MCHC_g_L']
+  WBC_G_L: ['/nl', 1, '/nl', 'WBC_G_L']
+  Fibrinogen_g_L: ['g/l', 1, 'g/l', 'Fibrinogen_g_L']
+  Monocytes_G_L: ['/nl', 1, '/nl', 'Monocytes_G_L']
+  Platelets_G_L: ['/nl', 1, '/nl', 'Platelets_G_L']
+  Lymphocytes_G_L: ['/nl', 1, '/nl', 'Lymphocytes_G_L']
+
+# Evaluation cutoffs for confidence-based filtering
+cutoffs:
+  - category: "ALL"
+    PPV: 0.9593636
+    ACC: 0.4528432
+  - category: "AML"
+    PPV: 0.9448341
+    ACC: 0.5001304
+  - category: "APL"
+    PPV: 0.7487954
+    ACC: 0.3770665 

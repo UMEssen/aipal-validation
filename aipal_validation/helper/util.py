@@ -104,6 +104,10 @@ def run_r_script(config):
 
     # Get additional arguments for R script
     r_script_args = config.get("r_script_args", [])
+    
+    # For synthetic data, automatically pass the config file path
+    if config.get("run_id") == "synthetic_test_data" and r_script_path == "aipal_validation/r/predict.R":
+        r_script_args = ["aipal_validation/config/config_synthetic.yaml"] + r_script_args
 
     # Command to run the R script
     command = ["Rscript", r_script_path] + r_script_args

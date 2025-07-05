@@ -11,12 +11,28 @@ from fhir_pyrate import Ahoy
 
 logger = logging.getLogger(__name__)
 
-auth = Ahoy(
-    auth_method="env",
-    username=os.environ["FHIR_USER"],
-    auth_url=os.environ["BASIC_AUTH"],
-    refresh_url=os.environ["REFRESH_AUTH"],
-)
+# Lazy-loaded authentication - only initialize when actually needed
+auth = None
+
+
+def get_auth():
+    """Get FHIR authentication object, initializing it only when needed."""
+    global auth
+    if auth is None:
+        try:
+            auth = Ahoy(
+                auth_method="env",
+                username=os.environ["FHIR_USER"],
+                auth_url=os.environ["BASIC_AUTH"],
+                refresh_url=os.environ["REFRESH_AUTH"],
+            )
+        except KeyError as e:
+            logger.error(f"Missing required environment variable for FHIR authentication: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Failed to initialize FHIR authentication: {e}")
+            raise
+    return auth
 
 OUTPUT_FORMAT = ".pkl"
 FOLDER_DEPTH = 64 // 8

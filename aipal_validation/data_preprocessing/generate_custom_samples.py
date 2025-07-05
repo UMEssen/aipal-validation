@@ -180,12 +180,28 @@ def parse_milano(df, config):
     return df
 
 
+def parse_synthetic_test_data(df, config):
+    """Parse synthetic test data - data is already in the correct format"""
+    print("Synthetic test data: Data is already in correct format")
+    # Data is already in SI units with correct column names
+    return df
+
 def main(config):
     if skip_build(config):
         return
 
     # Load and clean initial data
-    df = pd.read_excel(config["task_dir"] / "data.xlsx")
+    # Try to load Excel first, fallback to CSV
+    data_path_xlsx = config["task_dir"] / "data.xlsx"
+    data_path_csv = config["task_dir"] / "data.csv"
+    
+    if data_path_xlsx.exists():
+        df = pd.read_excel(data_path_xlsx)
+    elif data_path_csv.exists():
+        df = pd.read_csv(data_path_csv)
+    else:
+        raise FileNotFoundError(f"Neither {data_path_xlsx} nor {data_path_csv} exists")
+    
     df["class"] = df["class"].str.strip()
     df.columns = df.columns.str.strip()
 
@@ -211,6 +227,7 @@ def main(config):
         "lagos": lambda df, config: parse_lagos(df, config),
         "madagascar": lambda df, config: (print("Madagascar: Nothing to do"), df)[1],
         "hannover": lambda df, config: parse_hannover(df, config),
+        "synthetic_test_data": lambda df, config: parse_synthetic_test_data(df, config),
     }
     try:
         operation = run_operations[config["run_id"]]

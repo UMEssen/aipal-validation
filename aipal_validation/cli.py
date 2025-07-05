@@ -138,9 +138,15 @@ def parse_args_local(config) -> argparse.Namespace:
 
 
 def run():
-    config = load_config()
-
+    config = load_config()  # Load default
     args = parse_args_local(config)
+    
+    # If a different config was specified, reload it
+    if args.config != "aipal_validation/config/config_training.yaml":
+        config = load_config(args.config)
+        # Re-parse args with new config defaults
+        args = parse_args_local(config)
+    
     config.update(vars(args))
     if config["debug"]:
         logger.warning(

@@ -2,6 +2,7 @@
 
 AIPAL Validator is a tool designed to streamline the validation process for [AIPAL](https://github.com/VincentAlcazer/AIPAL). Below you'll find instructions on how to set up and run this validator both locally and with Docker.
 
+> **Note**: This README provides comprehensive documentation for the AIPAL validation pipeline. It covers local setup, Docker deployment, data import processes, outlier detection, and model retraining capabilities. For synthetic data testing, see the `synthetic_test_data/README.md` file for specific instructions.
 
 ## Local Setup
 
@@ -55,9 +56,9 @@ The project has the following structure:
   - `outlier/`: Outlier detection modules
   - `helper/`: Utility functions
 
-# Importing Data from Excel Without a Firemetrics Server
+# Importing Data from Excel
 
-If you don't have a Firemetrics server running and want to import data from an Excel sheet, follow these steps:
+To import data from an Excel sheet for analysis, follow these steps:
 
 ## Steps to Import Data
 

@@ -5,15 +5,35 @@ library(yaml)
 
 sessionInfo()
 
+# Get command line arguments - config file path is optional
+args <- commandArgs(trailingOnly = TRUE)
+config_file <- if (length(args) > 0 && file.exists(args[1])) args[1] else "aipal_validation/config/config_training.yaml"
+
+print(paste("Using config file:", config_file))
+
 # Load model, predictions, config
-config <- yaml.load_file("aipal_validation/config/config_training.yaml")
+config <- yaml.load_file(config_file)
 res_list <- readRDS("aipal_validation/r/221003_Final_model_res_list.rds")
 model <- res_list$final_model
-root_dir <- sub("^/", "", config$root_dir)
-root_dir <- normalizePath(file.path(getwd(), "..", root_dir))
+
+# Handle different directory structures
+root_dir <- config$root_dir
+if (root_dir == ".") {
+  # For synthetic data (current directory)
+  root_dir <- getwd()
+} else {
+  # For production data (/data structure)
+  root_dir <- sub("^/", "", root_dir)
+  root_dir <- normalizePath(file.path(getwd(), "..", root_dir))
+}
 
 working_dir <- file.path(root_dir, config$run_id, config$task)
-new_data <- read.csv(file.path(working_dir, "/samples.csv"))
+print(paste("Working directory:", working_dir))
+print(paste("Looking for samples.csv at:", file.path(working_dir, "samples.csv")))
+
+new_data <- read.csv(file.path(working_dir, "samples.csv"))
+
+print(paste("Loaded", nrow(new_data), "samples with", ncol(new_data), "columns"))
 
 # Check and replace NaN and Inf values with NA
 new_data[sapply(new_data, is.numeric)] <- sapply(new_data[sapply(new_data, is.numeric)], function(x) replace(x, is.nan(x) | is.infinite(x), NA))
@@ -29,6 +49,7 @@ new_data$Lymphocytes_G_L <- as.numeric(new_data$Lymphocytes_G_L)
 
 # Count number of missing values in each column
 missing_values <- sapply(new_data, function(x) sum(is.na(x)))
+print("Missing values per column:")
 print(missing_values)
 
 # Replace completely empty columns with NA and assign a consistent type (e.g., numeric)
@@ -44,5 +65,8 @@ predict_type <- function(new_data) {
 new_data$prediction <- predict_type(new_data)
 
 # Save new_data with predictions to a new CSV file
-print(paste0("Saving predictions to ", working_dir, "/predict.csv"))
-write.csv(new_data, file = paste0(working_dir, "/predict.csv"), row.names = FALSE)
+output_file <- file.path(working_dir, "predict.csv")
+print(paste0("Saving predictions to ", output_file))
+write.csv(new_data, file = output_file, row.names = FALSE)
+
+print("Prediction completed successfully!")

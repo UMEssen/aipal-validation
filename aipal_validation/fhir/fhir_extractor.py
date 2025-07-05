@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple, Union
 
 from fhir_pyrate.pirate import Pirate
 
-from aipal_validation.fhir.util import OUTPUT_FORMAT, auth, store_df
+from aipal_validation.fhir.util import OUTPUT_FORMAT, get_auth, store_df
 from aipal_validation.helper.util import timed
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ class FHIRExtractor:
     def __init__(self, config):
         self.config = config
         self.search = Pirate(
-            auth=auth,
+            auth=get_auth(),
             base_url=os.environ["SEARCH_URL"],
             num_processes=30,
         )
