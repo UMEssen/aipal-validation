@@ -1,124 +1,234 @@
 # AIPAL Validator
 
-AIPAL Validator is a tool designed to streamline the validation process for [AIPAL](https://github.com/VincentAlcazer/AIPAL). Below you'll find instructions on how to set up and run this validator both locally and with Docker.
+AIPAL Validator is a tool designed to streamline the validation process for [AIPAL](https://github.com/VincentAlcazer/AIPAL). This software provides a comprehensive FHIR-based validation pipeline for pediatric acute leukemia prediction models.
 
-> **Note**: This README provides comprehensive documentation for the AIPAL validation pipeline. It covers local setup, Docker deployment, data import processes, outlier detection, and model retraining capabilities. For synthetic data testing, see the `synthetic_test_data/README.md` file for specific instructions.
+**Repository**: https://github.com/UMEssen/aipal-validation  
+**Version**: 0.2.0  
+**License**: MIT License
 
-## Local Setup
+## System Requirements
 
-### Prerequisites
+### Software Dependencies
+- **Python**: 3.10 or higher
+- **R**: 4.0 or higher
+- **Poetry**: 1.0 or higher (for dependency management)
+- **Docker**: Optional, for containerized deployment
 
-- **R Installation**: Ensure R is installed on your system. If not, install it using:
+### Required R Packages
+- dplyr
+- tidyr 
+- yaml
+- caret
+- xgboost
 
-  ```bash
-  sudo apt-get install r-base
-  ```
+### Python Dependencies (managed by Poetry)
+- fhir-pyrate (from GitHub)
+- wandb ^0.18.0
+- pyyaml ^6.0.1
+- python-dotenv ^1.0.0
+- psycopg2-binary ^2.9.7
+- matplotlib ^3.8.0
+- scikit-learn ^1.4.2
+- openpyxl ^3.1.3
+- xgboost ^2.1.0
+- shap ^0.46.0
+- seaborn ^0.13.2
+- tabulate ^0.9.0
 
-  Also ensure to install the following packages within R: 'dplyr', 'tidyr', 'yaml', 'caret', 'xgboost'
+### Operating Systems Tested
+- Linux (Ubuntu 20.04+)
+- macOS (10.15+)
+- Windows 10 (via Docker)
 
-1. Install the necessary dependencies:
+### Hardware Requirements
+- Minimum: 8GB RAM, 2 CPU cores
+- Recommended: 16GB RAM, 4+ CPU cores
+- Storage: 2GB free space
 
-    ```bash
-    poetry install
-    ```
+## Installation Guide
 
-2. Run the validation process. You can specify the step to run (all, data, sampling, test):
+### Local Installation
 
-    ```bash
-    poetry run aipal_validation --task aipal --step [all,data,sampling,test]
-    ```
+1. **Install R and required packages**:
+   ```bash
+   # Ubuntu/Debian
+   sudo apt-get install r-base
+   
+   # macOS
+   brew install r
+   
+   # Install R packages
+   R -e "install.packages(c('dplyr', 'tidyr', 'yaml', 'caret', 'xgboost'))"
+   ```
 
-## Docker Setup
+2. **Install Poetry**:
+   ```bash
+   curl -sSL https://install.python-poetry.org | python3 -
+   ```
 
-1. Run the Docker container:
+3. **Clone and install dependencies**:
+   ```bash
+   git clone https://github.com/UMEssen/aipal-validation.git
+   cd aipal-validation
+   poetry install
+   ```
 
-    ```bash
-    docker compose run aipal bash
-    ```
+4. **Verify installation**:
+   ```bash
+   poetry run aipal_validation --help
+   ```
 
-2. Inside the Docker container, execute the validation script:
+**Typical installation time**: 5-10 minutes on a standard desktop computer
 
-    ```bash
-    python -m aipal_validation --task aipal --step [all,data,sampling,test]
-    ```
+### Docker Installation
+
+1. **Install Docker and Docker Compose**
+2. **Clone repository**:
+   ```bash
+   git clone https://github.com/UMEssen/aipal-validation.git
+   cd aipal-validation
+   ```
+
+3. **Build and run container**:
+   ```bash
+   docker compose build
+   docker compose run aipal bash
+   ```
+
+**Typical installation time**: 5-10 minutes (including Docker image build)
+
+## Demo
+
+### Quick Demo with Synthetic Data
+
+The software includes synthetic test data for demonstration purposes.
+
+1. **Generate synthetic data and run complete pipeline**:
+   ```bash
+   # Local installation
+   cd synthetic_test_data
+   poetry run python generate_syntetic_data.py
+   cd ..
+   poetry run aipal_validation \
+       --config aipal_validation/config/config_synthetic.yaml \
+       --task aipal \
+       --step sampling+test \
+       --debug
+   ```
+
+   ```bash
+   # Docker installation
+   docker compose run aipal bash
+   cd synthetic_test_data
+   python generate_syntetic_data.py
+   cd ..
+   python -m aipal_validation \
+       --config aipal_validation/config/config_synthetic.yaml \
+       --task aipal \
+       --step sampling+test \
+       --debug
+   ```
+
+### Expected Output
+
+The demo will generate the following files in `synthetic_test_data/aipal/`:
+- `data.csv` - Original synthetic medical data (1000 samples)
+- `samples.csv` - Processed data for ML pipeline
+- `predict.csv` - Model predictions with probabilities
+- `predictions_*.csv` - Results with different confidence cutoffs
+- `results.csv` - Final evaluation metrics (AUC, sensitivity, specificity)
+
+Expected console output includes:
+- Data processing statistics
+- Model prediction results
+- Performance metrics
+- Confidence interval calculations
+
+**Expected run time**: 2-5 minutes on a standard desktop computer
+
+## Instructions for Use
+
+### Running on Your Own Data
+
+#### Option 1: Excel Data Import
+
+1. **Prepare your data**:
+   - Create a directory structure: `your_cohort_name/aipal/`
+   - Place your Excel file in the `aipal` folder
+   - Ensure column names match expected format (see configuration files)
+
+2. **Set configuration**:
+   ```bash
+   # Update run_id in config to match your cohort name
+   vim aipal_validation/config/config_training.yaml
+   ```
+
+3. **Generate samples and run validation**:
+   ```bash
+   poetry run aipal_validation --task aipal --step sampling
+   poetry run aipal_validation --task aipal --step test
+   ```
+
+#### Option 2: FHIR Data Processing
+
+1. **Configure FHIR connection**:
+   - Update database connection settings in configuration files
+   - Set up environment variables for database credentials
+
+2. **Run complete pipeline**:
+   ```bash
+   poetry run aipal_validation --task aipal --step all
+   ```
+
+### Additional Tasks
+
+#### Outlier Detection (Adult Subset)
+```bash
+poetry run aipal_validation --task outlier --step detect
+```
+
+#### Model Retraining (Pediatric Subset)
+```bash
+poetry run aipal_validation --task retrain --step all
+```
 
 ## Project Structure
 
-The project has the following structure:
+```
+aipal_validation/
+├── r/                    # R scripts for prediction and model training
+├── config/              # Configuration files
+├── data_preprocessing/  # Data preprocessing modules
+├── eval/               # Evaluation modules
+├── fhir/               # FHIR-related modules
+├── ml/                 # Machine learning modules
+├── outlier/            # Outlier detection modules
+└── helper/             # Utility functions
+```
 
-- `aipal_validation/`: Main package containing all functionality
-  - `r/`: Contains all R scripts for prediction and model training (moved from root directory)
-  - `config/`: Configuration files
-  - `data_preprocessing/`: Data preprocessing modules
-  - `eval/`: Evaluation modules
-  - `fhir/`: FHIR-related modules
-  - `ml/`: Machine learning modules
-  - `outlier/`: Outlier detection modules
-  - `helper/`: Utility functions
+## Reproduction Instructions
 
-# Importing Data from Excel
+To reproduce the results from the associated manuscript:
 
-To import data from an Excel sheet for analysis, follow these steps:
-
-## Steps to Import Data
-
-1. **Set the `run_id`:**
-   - Update the `run_id` to match your cohort name.
-
-2. **Prepare Your Directory:**
-   - In your `root_dir`, create a folder named after your cohort.
-   - Inside this folder, create another folder named `aipal`.
-   - Place your Excel sheet in the `aipal` folder.
-
-3. **Generate Custom Samples:**
-   - Run the following command:
-     ```bash
-     python -m aipal_validation --task aipal --step sampling
-     ```
-   - This command invokes the `generate_custom_samples.py` class.
-   - Ensure the column names in your Excel file exactly match the expected names in the script.
-   - Alternatively, perform necessary data transformations within the script.
-
-4. **Run the Validation Pipeline:**
-   - Once the `samples.csv` file is successfully created, execute the following command to run the validation pipeline:
-     ```bash
-     python -m aipal_validation --task aipal --step test
-     ```
-
-# Outlier Detection
-
-To run outlier detection on your dataset and identify potential anomalies:
-
-1. **Local Setup:**
+1. **Follow the installation guide above**
+2. **Use the provided synthetic data or your own dataset**
+3. **Run the complete validation pipeline**:
    ```bash
-   poetry run aipal_validation --task outlier --step detect
+   poetry run aipal_validation --task aipal --step all
    ```
+4. **Evaluation scripts** are available in the `eval/` directory for detailed analysis
 
-2. **Docker Setup:**
-   ```bash
-   docker compose run aipal bash
-   python -m aipal_validation --task outlier --step detect
-   ```
+## License
 
-The outlier detection uses isolation forest and local outlier factor (LOF) algorithms to identify samples that deviate significantly from the expected patterns in each class.
+This software is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-# Model Retraining (on pediatric subset)
+## Citation
 
-To retrain the AIPAL model with your dataset:
+If you use this software in your research, please cite:
+```
+[Citation information to be added when manuscript is published]
+```
 
-1. **Local Setup:**
-   ```bash
-   poetry run aipal_validation --task retrain --step all
-   ```
+## Support
 
-2. **Docker Setup:**
-   ```bash
-   docker compose run aipal bash
-   python -m aipal_validation --task retrain --step all
-   ```
-
-The retraining process will:
-- Split your data into training and testing sets
-- Train an XGBoost model on the pediatric subset (age < 18)
-- Save the retrained model and prediction outputs to the `aipal_validation/r/` directory
-- Perform evaluation on the test set
+For issues and questions, please open an issue on the [GitHub repository](https://github.com/UMEssen/aipal-validation/issues).
