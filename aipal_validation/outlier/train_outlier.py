@@ -253,7 +253,31 @@ class MulticentricOutlierDetector:
         logger.info("\nClassification Report:")
         logger.info(classification_report(df["class"], y_pred, labels=available_classes))
 
+        # Calculate PPV and NPV for each class
+        logger.info("\nPPV and NPV by class:")
+        ppv_npv_scores = {}
+        for cls in available_classes:
+            # For each class, calculate binary classification metrics (one-vs-rest)
+            y_true_binary = (df["class"] == cls).astype(int)
+            y_pred_binary = (y_pred == cls).astype(int)
+
+            # Calculate confusion matrix components
+            tp = np.sum((y_true_binary == 1) & (y_pred_binary == 1))  # True Positives
+            fp = np.sum((y_true_binary == 0) & (y_pred_binary == 1))  # False Positives
+            tn = np.sum((y_true_binary == 0) & (y_pred_binary == 0))  # True Negatives
+            fn = np.sum((y_true_binary == 1) & (y_pred_binary == 0))  # False Negatives
+
+            # Calculate PPV (Positive Predictive Value) = Precision = TP / (TP + FP)
+            ppv = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+
+            # Calculate NPV (Negative Predictive Value) = TN / (TN + FN)
+            npv = tn / (tn + fn) if (tn + fn) > 0 else 0.0
+
+            ppv_npv_scores[cls] = {'PPV': ppv, 'NPV': npv}
+            logger.info(f"  {cls}: PPV = {ppv:.4f}, NPV = {npv:.4f}")
+
         return {
             'auc_scores': auc_scores,
+            'ppv_npv_scores': ppv_npv_scores,
             'accuracy': classification_report(df["class"], y_pred, labels=available_classes, output_dict=True)['accuracy']
         }

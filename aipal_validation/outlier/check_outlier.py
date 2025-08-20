@@ -76,3 +76,51 @@ class OutlierChecker:
             json.dump(results, f)
 
         return results
+
+    def check_dataframe(self, df):
+        """Check outliers for entire DataFrame (much faster than sample-by-sample)"""
+        # Make a copy to avoid modifying the original
+        df_copy = df.copy()
+
+        # Calculate Monocytes_percent if needed
+        if "Monocytes_G_L" in df_copy.columns and "WBC_G_L" in df_copy.columns:
+            df_copy["Monocytes_percent"] = (df_copy["Monocytes_G_L"] * 100) / df_copy["WBC_G_L"]
+
+        # Ensure all required features are present
+        missing_features = [f for f in self.features if f not in df_copy.columns]
+        if missing_features:
+            raise ValueError(f"Missing required features: {missing_features}")
+
+        # Preprocess all samples at once
+        X_data = self.imputer.transform(df_copy[self.features])
+        X_data = self.scaler.transform(X_data)
+
+        # Convert back to DataFrame to preserve feature names (fixes sklearn warnings)
+        X_df = pd.DataFrame(X_data, columns=self.features, index=df_copy.index)
+
+        # Initialize outlier column
+        df_copy["outlier"] = 0
+
+        # Apply outlier detection for each class
+        for cls in df_copy["class"].unique():
+            if cls not in self.outlier_models:
+                continue
+
+            cls_mask = df_copy["class"] == cls
+            cls_data = X_df[cls_mask]
+
+            if len(cls_data) == 0:
+                continue
+
+            # Get models for this class
+            models = self.outlier_models[cls]
+
+            # Predict outliers using both models
+            iso_pred = models["iso_forest"].predict(cls_data)
+            lof_pred = models["lof"].predict(cls_data)
+
+            # Mark as outlier if either model flags it
+            outlier_mask = (iso_pred == -1) | (lof_pred == -1)
+            df_copy.loc[cls_mask, "outlier"] = outlier_mask.astype(int)
+
+        return df_copy

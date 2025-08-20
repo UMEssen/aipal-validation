@@ -138,15 +138,9 @@ def parse_args_local(config) -> argparse.Namespace:
 
 
 def run():
-    config = load_config()  # Load default
+    config = load_config()
+
     args = parse_args_local(config)
-    
-    # If a different config was specified, reload it
-    if args.config != "aipal_validation/config/config_training.yaml":
-        config = load_config(args.config)
-        # Re-parse args with new config defaults
-        args = parse_args_local(config)
-    
     config.update(vars(args))
     if config["debug"]:
         logger.warning(
@@ -160,6 +154,12 @@ def run():
     config["task_dir"] = config["root_dir"] / config["task"]
     config["task_dir"].mkdir(parents=True, exist_ok=True)
     logger.info(f"The outputs will be stored in {config['task_dir']}.")
+
+    # Set outlier model parameters if provided
+    if config.get("model_dir"):
+        config["outlier_model_dir"] = config["model_dir"]
+        config["outlier_config_path"] = config.get("outlier_config", "aipal_validation/config/config_outlier.yaml")
+        logger.info(f"Will use pre-trained outlier models from: {config['outlier_model_dir']}")
 
     fh = logging.FileHandler(config["task_dir"] / "log.txt")
     fh.setLevel(logging.INFO)

@@ -163,33 +163,92 @@ def analyze_cohort_differences(df, feature, cohorts):
             }
     return cohort_stats, overall_stats
 
-def plot_distribution_comparison(df, feature, save_dir=None):
-    """Create violin plots comparing distributions across classes with reference values."""
-    plt.figure(figsize=(12, 6))
+def plot_distribution_comparison(df, features, save_dir=None):
+    """Create violin plots comparing distributions across classes with reference values for all features."""
+    # Calculate number of rows and columns for subplots
+    n_features = len(features)
+    n_cols = 5  # 5 columns for better layout
+    n_rows = (n_features + n_cols - 1) // n_cols  # Ceiling division
 
-    # Reset index to avoid duplicate label issues and create plot
-    plot_df = df.reset_index(drop=True)
-    sns.violinplot(data=plot_df, x='class', y=feature)
+    plt.figure(figsize=(18, 6 * n_rows))
 
-    # Add reference means as points for classes that have reference values
-    classes = ['ALL', 'AML', 'APL']
-    ref_means = []
-    valid_classes = []
-    for c in classes:
-        if feature in REFERENCE_VALUES[c]:
-            ref_means.append(REFERENCE_VALUES[c][feature]['mean'])
-            valid_classes.append(c)
+    for idx, feature in enumerate(features, 1):
+        plt.subplot(n_rows, n_cols, idx)
 
-    if ref_means:
-        plt.plot(range(len(valid_classes)), ref_means, 'r*', markersize=15, label='Reference Mean')
+        # Reset index to avoid duplicate label issues and create plot
+        plot_df = df.reset_index(drop=True)
 
-    plt.title(f'{feature} Distribution Comparison')
-    plt.ylabel(f"{feature} ({STANDARDIZED_FEATURES[feature]['unit']})")
-    plt.legend()
+        # Remove outliers for better visualization using IQR method
+        Q1 = plot_df[feature].quantile(0.25)
+        Q3 = plot_df[feature].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+
+        # Get reference means for this feature to ensure they're included in the plot range
+        ref_means_for_feature = []
+        for c in ['ALL', 'AML', 'APL']:
+            if feature in REFERENCE_VALUES[c]:
+                ref_means_for_feature.append(REFERENCE_VALUES[c][feature]['mean'])
+
+        # Expand bounds to include reference means if they exist
+        if ref_means_for_feature:
+            min_ref_mean = min(ref_means_for_feature)
+            max_ref_mean = max(ref_means_for_feature)
+            lower_bound = min(lower_bound, min_ref_mean - abs(min_ref_mean * 0.05))  # 5% buffer
+            upper_bound = max(upper_bound, max_ref_mean + abs(max_ref_mean * 0.05))  # 5% buffer
+
+        # Filter data to remove outliers for plotting
+        mask = (plot_df[feature] >= lower_bound) & (plot_df[feature] <= upper_bound)
+        plot_df_filtered = plot_df[mask].copy()
+
+        # Create violin plot
+        sns.violinplot(data=plot_df_filtered, x='class', y=feature)
+
+        # Add reference means as points for classes that have reference values
+        classes = ['ALL', 'AML', 'APL']
+        ref_means = []
+        valid_classes = []
+        x_positions = []
+
+        # Get the actual class order from the plot
+        actual_classes = plot_df_filtered['class'].unique()
+        class_to_position = {cls: i for i, cls in enumerate(actual_classes)}
+
+        for c in classes:
+            if feature in REFERENCE_VALUES[c] and c in class_to_position:
+                ref_mean = REFERENCE_VALUES[c][feature]['mean']
+                # Now reference means should always be within our expanded range
+                ref_means.append(ref_mean)
+                valid_classes.append(c)
+                x_positions.append(class_to_position[c])
+
+        if ref_means and x_positions:
+            plt.plot(x_positions, ref_means, 'r*', markersize=12, label='Reference Mean')
+
+        plt.title(f'{feature}', fontsize=12, fontweight='bold')
+        plt.ylabel(f"{feature}\n({STANDARDIZED_FEATURES[feature]['unit']})", fontsize=10)
+        plt.xlabel('Disease Class', fontsize=10)
+
+        # Add legend only to the first subplot to avoid clutter
+        if idx == 1 and ref_means:
+            plt.legend(loc='upper right', fontsize=9)
+
+        # Rotate x-axis labels if needed
+        plt.xticks(rotation=45)
+
+        # Set y-axis limits to focus on non-outlier range
+        plt.ylim(lower_bound * 0.95, upper_bound * 1.05)
+
+    plt.tight_layout()
 
     if save_dir:
         os.makedirs(save_dir, exist_ok=True)
-        plt.savefig(os.path.join(save_dir, f'{feature}_comparison.png'))
+        plt.savefig(os.path.join(save_dir, 'combined_distribution_comparison.png'),
+                   dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(save_dir, 'combined_distribution_comparison.pdf'),
+                   bbox_inches='tight')
+
     plt.close()
 
 def calculate_percentage_diff(current, reference):
@@ -526,6 +585,84 @@ def create_city_comparison_table(df, features, class_type):
 
     return result_df
 
+def plot_individual_distributions(df, features, save_dir=None):
+    """Create individual violin plots for each feature with outlier handling."""
+    if save_dir:
+        individual_plots_dir = os.path.join(save_dir, 'individual_plots')
+        os.makedirs(individual_plots_dir, exist_ok=True)
+
+    for feature in features:
+        plt.figure(figsize=(10, 6))
+
+        # Reset index to avoid duplicate label issues and create plot
+        plot_df = df.reset_index(drop=True)
+
+        # Remove outliers for better visualization using IQR method
+        Q1 = plot_df[feature].quantile(0.25)
+        Q3 = plot_df[feature].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+
+        # Get reference means for this feature to ensure they're included in the plot range
+        ref_means_for_feature = []
+        for c in ['ALL', 'AML', 'APL']:
+            if feature in REFERENCE_VALUES[c]:
+                ref_means_for_feature.append(REFERENCE_VALUES[c][feature]['mean'])
+
+        # Expand bounds to include reference means if they exist
+        if ref_means_for_feature:
+            min_ref_mean = min(ref_means_for_feature)
+            max_ref_mean = max(ref_means_for_feature)
+            lower_bound = min(lower_bound, min_ref_mean - abs(min_ref_mean * 0.05))  # 5% buffer
+            upper_bound = max(upper_bound, max_ref_mean + abs(max_ref_mean * 0.05))  # 5% buffer
+
+        # Filter data to remove outliers for plotting
+        mask = (plot_df[feature] >= lower_bound) & (plot_df[feature] <= upper_bound)
+        plot_df_filtered = plot_df[mask].copy()
+
+        # Create violin plot
+        sns.violinplot(data=plot_df_filtered, x='class', y=feature)
+
+        # Add reference means as points for classes that have reference values
+        classes = ['ALL', 'AML', 'APL']
+        ref_means = []
+        x_positions = []
+
+        # Get the actual class order from the plot
+        actual_classes = plot_df_filtered['class'].unique()
+        class_to_position = {cls: i for i, cls in enumerate(actual_classes)}
+
+        for c in classes:
+            if feature in REFERENCE_VALUES[c] and c in class_to_position:
+                ref_mean = REFERENCE_VALUES[c][feature]['mean']
+                # Now reference means should always be within our expanded range
+                ref_means.append(ref_mean)
+                x_positions.append(class_to_position[c])
+
+        if ref_means and x_positions:
+            plt.plot(x_positions, ref_means, 'r*', markersize=15, label='Reference Mean')
+
+        plt.title(f'{feature} Distribution Comparison', fontweight='bold', fontsize=14)
+        plt.ylabel(f"{feature} ({STANDARDIZED_FEATURES[feature]['unit']})", fontsize=12)
+        plt.xlabel('Disease Class', fontsize=12)
+
+        if ref_means:
+            plt.legend()
+
+        # Set y-axis limits to focus on non-outlier range
+        plt.ylim(lower_bound * 0.95, upper_bound * 1.05)
+
+        plt.tight_layout()
+
+        if save_dir:
+            plt.savefig(os.path.join(individual_plots_dir, f'{feature}_comparison.png'),
+                       dpi=300, bbox_inches='tight')
+            plt.savefig(os.path.join(individual_plots_dir, f'{feature}_comparison.pdf'),
+                       bbox_inches='tight')
+
+        plt.close()
+
 def run_analysis(is_adult: bool):
     """Runs the analysis for a specific cohort (adult or pediatric)."""
     # Load the data
@@ -595,6 +732,14 @@ def run_analysis(is_adult: bool):
     plots_dir = os.path.join(output_dir, 'distribution_plots')
     os.makedirs(plots_dir, exist_ok=True)
 
+    # Create combined distribution plot for all features
+    print("\nCreating combined distribution plots...")
+    plot_distribution_comparison(df, analysis_features, plots_dir)
+
+    # Create individual plots for each feature as well
+    print("Creating individual distribution plots...")
+    plot_individual_distributions(df, analysis_features, plots_dir)
+
     # Analyze each feature
     for feature in analysis_features:
         print(f"\n{feature} Analysis ({STANDARDIZED_FEATURES[feature]['unit']}):")
@@ -663,9 +808,6 @@ def run_analysis(is_adult: bool):
                         if abs(stats['std']) > ref_values['sd'] * 2:
                             print(f"⚠️ WARNING: {cohort} shows much higher variability than reference")
 
-        # Create distribution plot
-        plot_distribution_comparison(df, feature, plots_dir)
-
     print("\n=== Summary of Major Discrepancies ===")
     print("\nFeatures with significant differences from reference values:")
 
@@ -698,6 +840,9 @@ def run_analysis(is_adult: bool):
                         print(f"\n- {feature} ({STANDARDIZED_FEATURES[feature]['unit']}) in {class_type} for {cohort}:")
                         print(f"  Mean difference: {mean_diff_str}")
                         print(f"  SD ratio: {sd_ratio:.1f}x reference")
+
+    # Create individual plots for each feature
+    plot_individual_distributions(df, analysis_features, output_dir)
 
 def main():
     """Runs the analysis for both adult and pediatric cohorts."""

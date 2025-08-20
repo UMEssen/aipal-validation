@@ -17,7 +17,7 @@ features.append('class')
 
 
 # overall
-df = df[features]
+# df = df[features]
 df.sex = df.sex.str.lower().str.strip()
 df.sex = df.sex.replace('male', 'male')
 df.sex = df.sex.replace('female', 'female')
@@ -33,6 +33,13 @@ print(f"Ratio: {male/female}")
 print(f"Audult: {len(df[df.age > 18])}")
 print(f"Children: {len(df[df.age <= 18])}")
 print(f"Classes: \n{df['class'].value_counts()}")
+
+print(f"Classes for adults: \n{df[df.age > 18]['class'].value_counts()}")
+print(f"Classes for children: \n{df[df.age <= 18]['class'].value_counts()}")
+
+
+print(f"Grouping center for adults: \n{df[df.age > 18]['city_country'].value_counts()}")
+print(f"Grouping center for children: \n{df[df.age <= 18]['city_country'].value_counts()}")
 
 
 # # get samples with more than 20 % missing values

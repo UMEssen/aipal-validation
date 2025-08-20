@@ -13,6 +13,7 @@ from sklearn.utils import resample
 import wandb
 import yaml
 from aipal_validation.ml.util import init_wandb
+from aipal_validation.outlier.check_outlier import OutlierChecker
 
 
 class LeukemiaModelEvaluator:
@@ -28,6 +29,7 @@ class LeukemiaModelEvaluator:
             }
         )
         self.ds_name = ds_name
+        self.outlier_checker = None  # Will be initialized if needed
 
     @staticmethod
     def log_to_wandb(results, phase="Evaluation"):
@@ -63,7 +65,22 @@ class LeukemiaModelEvaluator:
         # Extract the max predicted value for each row and the corresponding class
         prediction_columns = [f"prediction.{cat}" for cat in ["ALL", "AML", "APL"]]
 
-        if cutoff_metric == "ISO":  # Apply Isolation Forest and Local Outlier Factor
+        if cutoff_metric == "PRETRAINED_OUTLIER":  # Use pre-trained outlier models
+            if self.outlier_checker is None:
+                raise ValueError("OutlierChecker not initialized. Call set_outlier_checker() first.")
+
+            try:
+                # Use batch processing for efficiency
+                data_with_outliers = self.outlier_checker.check_dataframe(data)
+                data = data_with_outliers[data_with_outliers["outlier"] == 0].copy()
+                deleted_count = len(data_with_outliers) - len(data)
+            except Exception as e:
+                logging.error(f"Error during outlier detection: {e}")
+                # Fallback: return original data without outlier filtering
+                logging.warning("Falling back to no outlier filtering")
+                deleted_count = 0
+
+        elif cutoff_metric == "ISO":  # Apply Isolation Forest and Local Outlier Factor
             # Drop rows with missing values (or alternatively impute them)
             features = [
                 "age",
@@ -304,12 +321,25 @@ class LeukemiaModelEvaluator:
 
         return self.data
 
+    def set_outlier_checker(self, model_dir, config_path):
+        """Initialize OutlierChecker with pre-trained models"""
+        self.outlier_checker = OutlierChecker()
+        self.outlier_checker.load_models(model_dir, config_path)
+        logging.info(f"Loaded pre-trained outlier models from {model_dir}")
+
 def run_evaluation(config, ds_dict, cutoff_dict):
     results_df = pd.DataFrame()
     for ds_name, ds in ds_dict.items():
         evaluator = LeukemiaModelEvaluator(ds, config, ds_name)
         ds = evaluator.prediction_data_pruner(threshold=0.2)
         LeukemiaModelEvaluator.calculate_auc(ds)
+
+        # Initialize outlier checker if needed
+        if any(cutoff_metric == "PRETRAINED_OUTLIER" for cutoff_metric in cutoff_dict.values()):
+            if hasattr(config, 'outlier_model_dir') and hasattr(config, 'outlier_config_path'):
+                evaluator.set_outlier_checker(config.outlier_model_dir, config.outlier_config_path)
+            else:
+                logging.warning("PRETRAINED_OUTLIER requested but outlier_model_dir or outlier_config_path not provided")
 
         for cutoff_type, cutoff_metric in cutoff_dict.items():
             results = evaluator.bootstrap_metrics(
@@ -350,6 +380,11 @@ def main(config):
         "overall cutoff": "ACC",
         "confident cutoff": "PPV",
     }
+
+    # Add pre-trained outlier detection if models are available
+    if hasattr(config, 'outlier_model_dir') and config.get('outlier_model_dir'):
+        cutoff_dict["pretrained outlier"] = "PRETRAINED_OUTLIER"
+        logging.info("Added pre-trained outlier detection to evaluation")
 
     if config['step'] == 'all_cohorts':
         # make relative to the package directory
