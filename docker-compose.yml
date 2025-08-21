@@ -25,7 +25,7 @@ services:
       - METRICS_HOSTNAME
       - METRICS_PORT
       - METRICS_DB
-      - WANDB_API_KEY=$WANDB_API_KEY
+      - WANDB_API_KEY=${WANDB_API_KEY}
       - WANDB_DIR=/data/wandb
       - WANDB_CACHE_DIR=/data/wandb
       - WANDB_CONFIG_DIR=/data/wandb
@@ -38,3 +38,4 @@ services:
 networks:
   default:
     name: "aipal_validation"
+    external: true
