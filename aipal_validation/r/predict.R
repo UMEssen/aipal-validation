@@ -38,14 +38,29 @@ print(paste("Loaded", nrow(new_data), "samples with", ncol(new_data), "columns")
 # Check and replace NaN and Inf values with NA
 new_data[sapply(new_data, is.numeric)] <- sapply(new_data[sapply(new_data, is.numeric)], function(x) replace(x, is.nan(x) | is.infinite(x), NA))
 
-# Add calculated column for Monocytes_percent
-new_data$Monocytes_percent <- new_data$Monocytes_G_L * 100 / new_data$WBC_G_L
+# Ensure required columns exist when some features were dropped (e.g., Monocytes_G_L)
+if (!("Monocytes_G_L" %in% names(new_data))) {
+  new_data$Monocytes_G_L <- NA_real_
+}
+if (!("WBC_G_L" %in% names(new_data))) {
+  new_data$WBC_G_L <- NA_real_
+}
+
+# Add calculated column for Monocytes_percent (robust to missing inputs)
+new_data$Monocytes_percent <- NA_real_
+if ("Monocytes_G_L" %in% names(new_data) && "WBC_G_L" %in% names(new_data)) {
+  suppressWarnings({
+    new_data$Monocytes_percent <- new_data$Monocytes_G_L * 100 / new_data$WBC_G_L
+  })
+}
 
 # Replace any resulting Inf or NaN in calculations (if any)
 new_data$Monocytes_percent[is.infinite(new_data$Monocytes_percent) | is.nan(new_data$Monocytes_percent)] <- NA
 
 # Convert 'Lymphocytes_G_L' to numeric (only relevant as fraction dataset does not include this observation)
-new_data$Lymphocytes_G_L <- as.numeric(new_data$Lymphocytes_G_L)
+if ("Lymphocytes_G_L" %in% names(new_data)) {
+  new_data$Lymphocytes_G_L <- as.numeric(new_data$Lymphocytes_G_L)
+}
 
 # Count number of missing values in each column
 missing_values <- sapply(new_data, function(x) sum(is.na(x)))

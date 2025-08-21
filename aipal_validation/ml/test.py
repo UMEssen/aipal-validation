@@ -318,7 +318,6 @@ class LeukemiaModelEvaluator:
         logging.info(
             f"Class distribution after pruning (base cohort): {self.data['class'].value_counts().to_dict()}"
         )
-
         return self.data
 
     def set_outlier_checker(self, model_dir, config_path):
@@ -386,7 +385,7 @@ def main(config):
         cutoff_dict["pretrained outlier"] = "PRETRAINED_OUTLIER"
         logging.info("Added pre-trained outlier detection to evaluation")
 
-    if config['step'] == 'all_cohorts':
+    if config['step'] == 'all_cohorts' and not config['task'] == 'no_monocytes':
         # make relative to the package directory
         path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config', 'config_analysis.yaml')
         config_analysis = yaml.safe_load(open(path))
@@ -443,5 +442,5 @@ def main(config):
         results_df.to_csv(config["task_dir"] / "results_base.csv")
 
     else:
-        run_evaluation(config, ds_dict, cutoff_dict)
+        results_df = run_evaluation(config, ds_dict, cutoff_dict)
         results_df.to_csv(config["task_dir"] / "results.csv")

@@ -6,6 +6,7 @@ from pathlib import Path
 import subprocess
 
 import yaml
+import pandas as pd
 
 from aipal_validation.data_preprocessing import (
     generate_custom_samples,
@@ -14,6 +15,7 @@ from aipal_validation.data_preprocessing import (
 from aipal_validation.fhir import FHIRExtractor, FHIRFilter, FHIRValidator
 from aipal_validation.helper.util import is_main_process, run_r_script, timed
 from aipal_validation.ml import test
+from aipal_validation.helper.revision import prepare_and_run_no_monocytes
 from aipal_validation.outlier import OutlierChecker
 from aipal_validation.outlier.train_outlier import MulticentricOutlierDetector
 
@@ -193,6 +195,14 @@ def run():
         detector.train_outlier_models()
         detector.save_models(config["outlier_output_dir"])
         detector.detect_and_evaluate()
+        return
+    
+    if config['task'] == 'no_monocytes':
+        try:
+            prepare_and_run_no_monocytes(config)
+        except Exception as e:
+            logger.error(f"no_monocytes flow failed: {e}")
+            raise
         return
 
     assert config["task"] in pipelines, f"Task {config['task']} not found."
