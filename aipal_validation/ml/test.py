@@ -410,18 +410,50 @@ def main(config):
 
     else:
         data = pd.read_csv(config["task_dir"] / "predict.csv")
-    data_pediatric = data[data["age"] < 18].dropna(subset=["age"])
-    data_adults = data[data["age"] >= 18].dropna(subset=["age"])
     minimum_cohort_size = 30
-    if (
-        len(data_pediatric) > minimum_cohort_size
-        and len(data_adults) >= minimum_cohort_size
-    ):
-        ds_dict = {"kids": data_pediatric, "adults": data_adults}
-    elif len(data_pediatric) > minimum_cohort_size:
-        ds_dict = {"kids": data_pediatric}
-    elif len(data_adults) >= minimum_cohort_size:
-        ds_dict = {"adults": data_adults}
+
+    # Build dataset groups
+    ds_dict = {}
+    age_binning = config.get('age_binning', 'none')
+
+    # If retrain task, keep pediatric-only evaluation regardless of binning
+    if config.get('task') == 'retrain':
+        data_pediatric = data[data["age"] < 18].dropna(subset=["age"])
+        if len(data_pediatric) > minimum_cohort_size:
+            ds_dict = {"kids": data_pediatric}
+        else:
+            logging.warning("Not enough pediatric samples for retrain evaluation")
+    else:
+        if age_binning == 'decade':
+            data_nonan = data.dropna(subset=["age"]).copy()
+            data_nonan.loc[:, 'age_decade_start'] = (data_nonan['age'] // 10 * 10).astype(int)
+            # Create human-readable labels, e.g., 0-9, 10-19, ...
+            data_nonan.loc[:, 'age_decade_label'] = data_nonan['age_decade_start'].astype(str) + '-' + (data_nonan['age_decade_start'] + 9).astype(str)
+
+            for decade_label, df_decade in data_nonan.groupby('age_decade_label'):
+                if len(df_decade) >= minimum_cohort_size:
+                    ds_dict[f"age_{decade_label}"] = df_decade
+                    logging.info(f"Added {decade_label} to ds_dict")
+                    logging.info(f"Shape of {decade_label}: {df_decade.shape}")
+                    logging.info(f"Class distribution of {decade_label}: {df_decade['class'].value_counts().to_dict()}")
+            if not ds_dict:
+                logging.warning("No decade bins meet the minimum cohort size; falling back to overall")
+                ds_dict = {"overall": data_nonan}
+        else:
+            # Default behavior: kids vs adults split
+            data_pediatric = data[data["age"] < 18].dropna(subset=["age"])
+            data_adults = data[data["age"] >= 18].dropna(subset=["age"])
+            if (
+                len(data_pediatric) > minimum_cohort_size
+                and len(data_adults) >= minimum_cohort_size
+            ):
+                ds_dict = {"kids": data_pediatric, "adults": data_adults}
+            elif len(data_pediatric) > minimum_cohort_size:
+                ds_dict = {"kids": data_pediatric}
+            elif len(data_adults) >= minimum_cohort_size:
+                ds_dict = {"adults": data_adults}
+            else:
+                ds_dict = {"overall": data.dropna(subset=["age"]) }
 
     results_df = pd.DataFrame()
 

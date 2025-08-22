@@ -1,5 +1,5 @@
 # Set task
-task: retrain_trainset
+task: age_binning
 debug: False
 
 # General params for setting the folders and the extraction
@@ -7,6 +7,7 @@ run_id: "all_cohorts"
 
 root_dir: "/data"
 step: "all_cohorts"
+age_binning: "decade" # options: none, decade
 
 # Enforce run and not read cache
 rerun_cache: False

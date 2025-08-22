@@ -81,3 +81,53 @@ def prepare_and_run_no_monocytes(config: dict) -> None:
     config['step'] = prev_step
 
 
+
+def merge_all_cohorts_predicts_and_eval(config: dict) -> None:
+    """Merge existing predict.csv from all cohorts, write to task_dir, and evaluate.
+
+    - Reads cohort list from config_analysis.yaml
+    - Loads each root_parent/<cohort>/aipal/predict.csv
+    - Concats into a single DataFrame, prunes extra columns to match test.py expectations
+    - Writes task_dir/predict.csv
+    - Calls test.main with current config (honors age_binning, e.g., decade)
+    """
+    logger = logging.getLogger(__name__)
+
+    analysis_cfg_path = Path(__file__).resolve().parent.parent / 'config' / 'config_analysis.yaml'
+    config_analysis = yaml.safe_load(analysis_cfg_path.open())
+    cities_countries = config_analysis['cities_countries']
+
+    root_parent = config["root_dir"].parent
+    paths = [root_parent / city_country / 'aipal' / 'predict.csv' for city_country in cities_countries]
+    logger.info(f"Merging predictions from: {[str(p) for p in paths]}")
+
+    merged_df = pd.DataFrame()
+    for p in paths:
+        if not p.exists():
+            logger.warning(f"Missing predict.csv: {p}")
+            continue
+        df_small = pd.read_csv(p)
+        df_small['city'] = p.parent.parent.name
+        if df_small['city'].str.contains('Vessen').any():
+            df_small = df_small[df_small['age'] < 18]
+        merged_df = pd.concat([merged_df, df_small], ignore_index=True)
+
+    if merged_df.empty:
+        raise FileNotFoundError("No predict.csv files found to merge.")
+
+    # Drop columns not expected by evaluation, if present
+    drop_cols = ['recorded_date','encounter_start','encounter_end','patient_id','birth_date','condition_codes','condition_id','encounter_id']
+    existing_drop = [c for c in drop_cols if c in merged_df.columns]
+    if existing_drop:
+        merged_df.drop(columns=existing_drop, inplace=True)
+
+    merged_path = config["task_dir"] / 'predict.csv'
+    merged_df.to_csv(merged_path, index=False)
+    logger.info(f"Wrote merged predictions to {merged_path}")
+
+    # Ensure evaluation reads from task_dir/predict.csv
+    prev_step = config.get('step')
+    config['step'] = 'test'
+    test.main(config)
+    config['step'] = prev_step
+

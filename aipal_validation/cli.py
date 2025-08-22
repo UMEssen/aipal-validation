@@ -15,7 +15,7 @@ from aipal_validation.data_preprocessing import (
 from aipal_validation.fhir import FHIRExtractor, FHIRFilter, FHIRValidator
 from aipal_validation.helper.util import is_main_process, run_r_script, timed
 from aipal_validation.ml import test
-from aipal_validation.helper.revision import prepare_and_run_no_monocytes
+from aipal_validation.helper.revision import prepare_and_run_no_monocytes, merge_all_cohorts_predicts_and_eval
 from aipal_validation.outlier import OutlierChecker
 from aipal_validation.outlier.train_outlier import MulticentricOutlierDetector
 
@@ -23,6 +23,9 @@ pipelines = {
     "aipal": {
         "generate": generate_samples.main,
         "generate_custom": generate_custom_samples.main,
+        "test": test.main,
+    },
+    "age_binning": {
         "test": test.main,
     },
     "retrain": {
@@ -87,7 +90,7 @@ def parse_args_local(config) -> argparse.Namespace:
     parser.add_argument(
         "--step",
         type=str,
-        default="all",
+        default=config.get("step", "all"),
         help="Step to run, all_cohorts is for all_cohorts in one go",
     )
     parser.add_argument(
@@ -134,6 +137,13 @@ def parse_args_local(config) -> argparse.Namespace:
         "--outlier_output_dir",
         type=str,
         help="Directory to save trained outlier models",
+    )
+    parser.add_argument(
+        "--age_binning",
+        type=str,
+        default=config.get("age_binning", "none"),
+        choices=["none", "decade"],
+        help="Age grouping strategy for evaluation (none|decade)",
     )
 
     return parser.parse_args()
@@ -204,6 +214,14 @@ def run():
             logger.error(f"no_monocytes flow failed: {e}")
             raise
         return
+    
+    if config['task'] == 'age_binning':
+        # For age_binning with all_cohorts step, merge existing cohort predicts and evaluate
+        if config.get('step') == 'all_cohorts':
+            merge_all_cohorts_predicts_and_eval(config)
+            return
+        # Otherwise, just evaluate current task_dir/predict.csv
+        test.main(config)
 
     assert config["task"] in pipelines, f"Task {config['task']} not found."
 
