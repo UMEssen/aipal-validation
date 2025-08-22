@@ -15,7 +15,7 @@ from aipal_validation.data_preprocessing import (
 from aipal_validation.fhir import FHIRExtractor, FHIRFilter, FHIRValidator
 from aipal_validation.helper.util import is_main_process, run_r_script, timed
 from aipal_validation.ml import test
-from aipal_validation.helper.revision import prepare_and_run_no_monocytes, merge_all_cohorts_predicts_and_eval
+from aipal_validation.helper.revision import prepare_and_run_no_monocytes, merge_all_cohorts_predicts_and_eval, adults_outlier_investigation
 from aipal_validation.outlier import OutlierChecker
 from aipal_validation.outlier.train_outlier import MulticentricOutlierDetector
 
@@ -145,6 +145,12 @@ def parse_args_local(config) -> argparse.Namespace:
         choices=["none", "decade"],
         help="Age grouping strategy for evaluation (none|decade)",
     )
+    parser.add_argument(
+        "--adults_outliers",
+        action="store_true",
+        default=False,
+        help="Run adult outlier investigation and pattern analysis",
+    )
 
     return parser.parse_args()
 
@@ -167,11 +173,7 @@ def run():
     config["task_dir"].mkdir(parents=True, exist_ok=True)
     logger.info(f"The outputs will be stored in {config['task_dir']}.")
 
-    # Set outlier model parameters if provided
-    if config.get("model_dir"):
-        config["outlier_model_dir"] = config["model_dir"]
-        config["outlier_config_path"] = config.get("outlier_config", "aipal_validation/config/config_outlier.yaml")
-        logger.info(f"Will use pre-trained outlier models from: {config['outlier_model_dir']}")
+    # Outlier model paths are hardcoded in revision.py as they're part of the package
 
     fh = logging.FileHandler(config["task_dir"] / "log.txt")
     fh.setLevel(logging.INFO)
@@ -180,6 +182,12 @@ def run():
     )
     fh.setFormatter(formatter)
     logging.getLogger().addHandler(fh)
+
+    # Adults outlier investigation entrypoint
+    if config.get("adults_outliers"):
+        logger.info("Running adults outlier investigation via CLI flag --adults_outliers")
+        adults_outlier_investigation(config)
+        return
 
     # Handle retraining task for all_cohorts
     if config.get("task") == "retrain" and config.get("step") == "all_cohorts":

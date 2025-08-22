@@ -2,6 +2,7 @@ import json
 import pickle
 import pandas as pd
 import yaml
+import numpy as np
 from pathlib import Path
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
@@ -43,8 +44,11 @@ class OutlierChecker:
         """Check if a single sample is an outlier"""
         # Calculate Monocytes_percent
         if "Monocytes_G_L" in sample_data and "WBC_G_L" in sample_data:
-            mono_percent = (sample_data["Monocytes_G_L"] * 100) / sample_data["WBC_G_L"]
-            sample_data["Monocytes_percent"] = mono_percent
+            if sample_data["WBC_G_L"] == 0:
+                sample_data["Monocytes_percent"] = float('nan')
+            else:
+                mono_percent = (sample_data["Monocytes_G_L"] * 100) / sample_data["WBC_G_L"]
+                sample_data["Monocytes_percent"] = mono_percent
 
         # Create DataFrame with all required features
         sample_df = pd.DataFrame([sample_data])
@@ -54,8 +58,19 @@ class OutlierChecker:
         if missing_features:
             raise ValueError(f"Missing required features: {missing_features}")
 
+        # Handle infinity values and extremely large numbers before imputation
+        features_data = sample_df[self.features].copy()
+        
+        # Replace infinite values with NaN
+        features_data = features_data.replace([float('inf'), float('-inf')], float('nan'))
+        
+        # Replace extremely large values that could cause overflow
+
+        max_float64 = np.finfo(np.float64).max / 1e6  # Use a safe margin
+        features_data = features_data.clip(lower=-max_float64, upper=max_float64)
+
         # Preprocess sample
-        X_sample = self.imputer.transform(sample_df[self.features])
+        X_sample = self.imputer.transform(features_data)
         X_sample = self.scaler.transform(X_sample)
 
         # Check for each class
@@ -91,8 +106,19 @@ class OutlierChecker:
         if missing_features:
             raise ValueError(f"Missing required features: {missing_features}")
 
+        # Handle infinity values and extremely large numbers before imputation
+        features_data = df_copy[self.features].copy()
+        
+        # Replace infinite values with NaN
+        features_data = features_data.replace([float('inf'), float('-inf')], float('nan'))
+        
+        # Replace extremely large values that could cause overflow
+
+        max_float64 = np.finfo(np.float64).max / 1e6  # Use a safe margin
+        features_data = features_data.clip(lower=-max_float64, upper=max_float64)
+        
         # Preprocess all samples at once
-        X_data = self.imputer.transform(df_copy[self.features])
+        X_data = self.imputer.transform(features_data)
         X_data = self.scaler.transform(X_data)
 
         # Convert back to DataFrame to preserve feature names (fixes sklearn warnings)
