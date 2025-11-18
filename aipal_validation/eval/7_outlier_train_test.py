@@ -5,9 +5,13 @@ from pathlib import Path
 from sklearn.preprocessing import label_binarize
 from sklearn.metrics import roc_curve, auc
 import logging
+# FIGURE 4 d+e in Manuscript
 
 # Import the outlier detector
 from aipal_validation.outlier import MulticentricOutlierDetector
+
+# Import utility functions
+from .util import save_roc_source_data_to_excel
 
 # Set up logging
 def setup_logging(log_dir):
@@ -231,6 +235,15 @@ def run_analysis(is_adult: bool):
         test_results, test_counts,
         classes, tag, plots_dir
     )
+
+    # Extract and save ROC source data to Excel
+    datasets = {
+        'before_outlier_detection': ('Before Outlier Detection (High Confidence)', train_test),
+        'after_outlier_detection': ('After Outlier Detection (High Confidence)', train_clean),
+        'low_conf_before_outlier_detection': ('Low Confidence Before Outlier Detection', test_test),
+        'low_conf_after_outlier_detection': ('Low Confidence After Outlier Detection', test_clean)
+    }
+    save_roc_source_data_to_excel(datasets, plots_dir, tag, classes)
 
     # Log summary statistics
     for set_type, test_df, clean_df in [

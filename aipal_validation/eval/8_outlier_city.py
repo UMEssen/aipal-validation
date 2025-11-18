@@ -10,7 +10,7 @@ import sys
 import math
 
 from aipal_validation.outlier import MulticentricOutlierDetector
-from aipal_validation.cohort.util import load_data
+from aipal_validation.eval.util import load_data
 
 # Set up path for imports
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -396,7 +396,7 @@ def plot_city_subplots(city_results, city_counts, classes, tag, plots_dir):
 
     # Create figure with subplots
     fig, axes = plt.subplots(n_rows, n_cols, figsize=(6*n_cols, 5*n_rows), squeeze=False)
-    fig.suptitle('ROC Curves by City Before and After Outlier Detection', fontsize=20)
+    fig.suptitle('ROC Curves by City Before and After Outlier Detection', fontsize=20, y=1.02)
 
     # Track the overall legend items
     all_legend_items = []
@@ -487,18 +487,33 @@ def plot_city_subplots(city_results, city_counts, classes, tag, plots_dir):
         ax.set_ylabel('True Positive Rate')
         ax.grid(True, linestyle='--', alpha=0.4)
 
-    # Hide empty subplots
+    # Place legend in an empty subplot spot instead of at the bottom
+    legend_placed = False
     for i in range(len(valid_cities), n_rows * n_cols):
+        row = i // n_cols
+        col = i % n_cols
+        # Use this empty spot for the legend - turn off axes to show only legend
+        axes[row, col].axis('off')
+        axes[row, col].legend(all_legend_items, all_legend_labels,
+                             loc='center', ncol=1, fontsize=10)
+        axes[row, col].set_title('Legend', fontsize=12)
+        legend_placed = True
+        break
+
+    # Hide any remaining empty subplots
+    legend_idx = len(valid_cities) if legend_placed else n_rows * n_cols
+    for i in range(legend_idx + 1, n_rows * n_cols):
         row = i // n_cols
         col = i % n_cols
         axes[row, col].axis('off')
 
-    # Add a single legend for the entire figure
-    fig.legend(all_legend_items, all_legend_labels, loc='lower center',
-               bbox_to_anchor=(0.5, 0), ncol=len(classes)*2, fontsize=12)
+    # If no empty spot found (unlikely), fall back to figure legend
+    if not legend_placed:
+        fig.legend(all_legend_items, all_legend_labels, loc='lower center',
+                   bbox_to_anchor=(0.5, 0), ncol=len(classes)*2, fontsize=12)
 
     plt.tight_layout()
-    plt.subplots_adjust(bottom=0.15)  # Make room for the legend
+    plt.subplots_adjust(hspace=0.3, wspace=0.3)  # Remove bottom margin since legend is now in subplot
 
     # Save combined subplot figure
     subplots_path = os.path.join(plots_dir, f'roc_{tag}_city_subplots.png')
@@ -534,7 +549,8 @@ def run_analysis(is_adult: bool):
     # Load data using util.py function for the correct cohort
     logging.info(f"Loading {tag.lower()} data using util.py load_data function")
     # Pass the updated config path or ensure load_data uses the correct flag
-    df, _, features = load_data(config_path=config_path, is_adult=is_adult)
+    root_path = os.environ.get('AIPAL_DATA_ROOT', '/data/')
+    df, _, features = load_data(config_path=config_path, root_path=root_path, is_adult=is_adult, filter_missing_values=False)
     print(df.city_country.unique())
     class_per_city = df.groupby(['city_country', 'class']).size().reset_index(name='count')
     print(class_per_city)

@@ -13,10 +13,10 @@ predict_df <- function(new_df) {
   if (!"Monocytes_percent" %in% names(new_df)) {
     new_df$Monocytes_percent <- new_df$Monocytes_G_L * 100 / new_df$WBC_G_L
   }
-  
+
   # Make prediction
   prediction <- predict(model, newdata = new_df, type = "prob", na.action = na.pass)
-  
+
   # Return prediction
   return(prediction)
 }

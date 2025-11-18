@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
+import pandas as pd
 import yaml
 import os
 from pathlib import Path
 from sklearn.preprocessing import label_binarize
 from sklearn.metrics import roc_curve, auc
-from util import load_data
+from .util import load_data, extract_roc_source_data, save_roc_source_data_to_excel
 
 # Add proper font settings for better text rendering
 plt.rcParams['font.family'] = 'sans-serif'
@@ -35,7 +36,12 @@ def prediction_data_pruner(df, threshold=0):
 
 # Load the data using util.py's load_data function with analysis config
 analysis_config_path = str(Path(__file__).parent.parent / "config" / "config_analysis.yaml")
-df, config, features = load_data(config_path=analysis_config_path, is_adult=True)
+
+# Load config first to get root_dir
+with open(analysis_config_path, 'r') as f:
+    temp_config = yaml.safe_load(f)
+
+df, config, features = load_data(config_path=analysis_config_path, root_path=temp_config['root_dir'] + '/', is_adult=True)
 
 # Also load training config for cutoffs
 training_config_path = str(Path(__file__).parent.parent / "config" / "config_training.yaml")
@@ -116,9 +122,19 @@ roc_results_acc = calculate_roc_curves(df_acc)
 roc_results_ppv = calculate_roc_curves(df_ppv)
 
 # Create the plots directory if it doesn't exist
+tag = "Adult" if config['is_adult'] else "Pediatric"
 plots_dir = os.path.join(config['root_results'], '2_roc_auc_plot_cutoffs_all')
 os.makedirs(plots_dir, exist_ok=True)
 print(f"Saving plots to: {plots_dir}")
+
+# Extract and save ROC source data to Excel
+classes = ["AML", "APL", "ALL"]
+datasets = {
+    'no_cutoff': ('No Cutoff', df),
+    'overall_cutoff': ('Overall Cutoff', df_acc),
+    'confident_cutoff': ('Confident Cutoff', df_ppv)
+}
+save_roc_source_data_to_excel(datasets, plots_dir, tag, classes)
 
 # Create a combined figure with subplots for each class
 fig, axes = plt.subplots(1, 3, figsize=(18, 6))
@@ -226,7 +242,12 @@ def run_analysis(is_adult: bool):
 
     # Load the data using util.py's load_data function with analysis config
     analysis_config_path = str(Path(__file__).parent.parent / "config" / "config_analysis.yaml")
-    df, config, features = load_data(config_path=analysis_config_path, is_adult=is_adult)
+
+    # Load config first to get root_dir
+    with open(analysis_config_path, 'r') as f:
+        temp_config = yaml.safe_load(f)
+
+    df, config, features = load_data(config_path=analysis_config_path, root_path=temp_config['root_dir'] + '/', is_adult=is_adult)
 
     # Ensure config reflects the current cohort (important for output path)
     config['is_adult'] = is_adult
@@ -293,6 +314,41 @@ def run_analysis(is_adult: bool):
     plots_dir = os.path.join(config['root_results'], f'2_roc_auc_plot_cutoffs_{tag.lower()}')
     os.makedirs(plots_dir, exist_ok=True)
     print(f"Saving plots to: {plots_dir}")
+
+    # Extract and save ROC source data to Excel
+    print("Extracting ROC source data...")
+    roc_source_dir = os.path.join(plots_dir, 'roc_source_data')
+    os.makedirs(roc_source_dir, exist_ok=True)
+
+    classes = ["AML", "APL", "ALL"]
+    datasets = {
+        'no_cutoff': ('No Cutoff', df),
+        'overall_cutoff': ('Overall Cutoff', df_acc),
+        'confident_cutoff': ('Confident Cutoff', df_ppv)
+    }
+
+    for dataset_key, (dataset_name, df_data) in datasets.items():
+        if df_data is None or df_data.empty:
+            print(f"Skipping {dataset_name} - no data available")
+            continue
+
+        print(f"Processing {dataset_name} ({len(df_data)} samples)")
+
+        # Create Excel file with multiple sheets for each class
+        excel_path = os.path.join(roc_source_dir, f'roc_source_{tag.lower()}_{dataset_key}.xlsx')
+
+        with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+            for class_name in classes:
+                try:
+                    # Extract source data for this class
+                    source_df = extract_roc_source_data(df_data, class_name)
+                    # Save to Excel sheet
+                    source_df.to_excel(writer, sheet_name=class_name, index=False)
+                    print(f"Saved {class_name} data for {dataset_name}: {len(source_df)} samples")
+                except Exception as e:
+                    print(f"Error extracting ROC source data for {class_name} in {dataset_name}: {e}")
+
+        print(f"Saved ROC source data to: {excel_path}")
 
     # Create a combined figure with subplots for each class
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))

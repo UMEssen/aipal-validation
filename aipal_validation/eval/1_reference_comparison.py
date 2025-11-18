@@ -4,10 +4,12 @@ import sys
 import os
 from pathlib import Path
 import yaml
+import math
 import numpy as np
 import warnings
 import pandas as pd
-from util import load_data, save_to_excel
+from .util import load_data, save_to_excel
+# FIGURE 3a and 3b in Manuscript / Table
 
 # Suppress specific warnings
 warnings.filterwarnings('ignore', category=RuntimeWarning, message='Mean of empty slice')
@@ -191,6 +193,215 @@ def plot_distribution_comparison(df, feature, save_dir=None):
         os.makedirs(save_dir, exist_ok=True)
         plt.savefig(os.path.join(save_dir, f'{feature}_comparison.png'))
     plt.close()
+
+def plot_boxplots_by_feature(df, features, title, save_path_base):
+    """Create boxplots for all features grouped by class and save as PNG and SVG."""
+    available_features = [feature for feature in features if feature in df.columns]
+    if not available_features:
+        warnings.warn("No available features found in dataframe for boxplot generation.")
+        return
+
+    n_features = len(available_features)
+    n_rows = 1 if n_features == 1 else 2
+    n_cols = math.ceil(n_features / n_rows)
+
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(16, 10), sharey=False)
+    if isinstance(axes, np.ndarray):
+        axes = axes.flatten()
+    else:
+        axes = [axes]
+
+    for idx, feature in enumerate(available_features):
+        df.boxplot(column=feature, by='class', ax=axes[idx], showfliers=False)
+        axes[idx].set_title(feature)
+        axes[idx].set_xlabel("Class")
+        axes[idx].set_ylabel("Value")
+
+    for ax in axes[len(available_features):]:
+        ax.set_visible(False)
+
+    fig.suptitle(title)
+    fig.tight_layout()
+    fig.subplots_adjust(top=0.93)
+
+    os.makedirs(os.path.dirname(save_path_base), exist_ok=True)
+    fig.savefig(f"{save_path_base}.png", dpi=300, bbox_inches='tight')
+    fig.savefig(f"{save_path_base}.svg", bbox_inches='tight')
+    plt.close(fig)
+
+def plot_prediction_boxplots(df, title, save_path_base):
+    """Create boxplots for prediction scores by city/country and leukemia type.
+    Only includes True Positives (correct predictions) and cities with more than 5 patients.
+    Also saves the source data to Excel."""
+    # Check if prediction columns exist
+    prediction_columns = ['prediction.ALL', 'prediction.AML', 'prediction.APL']
+    if not all(col in df.columns for col in prediction_columns):
+        warnings.warn("Prediction columns not found in dataframe. Skipping prediction boxplots.")
+        return
+
+    # Replace Vessen with Essen in the dataframe (following the example)
+    df_plot = df.copy()
+    df_plot['city_country'] = df_plot['city_country'].replace('Vessen', 'Essen')
+
+    # Calculate predicted class for each sample
+    df_plot["predicted_class"] = (
+        df_plot[prediction_columns]
+        .idxmax(axis=1)
+        .str.replace("prediction.", "", regex=False)
+    )
+
+    # Filter for True Positives only (correct predictions)
+    df_plot = df_plot[df_plot["class"] == df_plot["predicted_class"]].copy()
+
+    # Create a figure and a set of subplots
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+    leukemia_types = ['AML', 'APL', 'ALL']
+    colors = ['red', 'green', 'blue']
+    prediction_cols = ['prediction.AML', 'prediction.APL', 'prediction.ALL']
+
+    # Dictionary to store data for Excel export
+    excel_data = {}
+
+    for i, (leukemia_type, color, pred_col) in enumerate(zip(leukemia_types, colors, prediction_cols)):
+        # Filter data for this leukemia type (True Positives only)
+        leukemia_data = df_plot[df_plot['class'] == leukemia_type].copy()
+
+        if len(leukemia_data) == 0:
+            continue
+
+        # Filter to only include cities with more than 5 patients for this leukemia type
+        city_counts = leukemia_data['city_country'].value_counts()
+        valid_cities = city_counts[city_counts > 5].index
+        leukemia_data = leukemia_data[leukemia_data['city_country'].isin(valid_cities)]
+
+        if len(leukemia_data) == 0:
+            axes[i].set_title(f"{leukemia_type}\n(No cities with >5 patients)")
+            axes[i].set_visible(False)
+            continue
+
+        # Calculate mean predictions and sort cities by mean (descending)
+        mean_preds = leukemia_data.groupby('city_country')[pred_col].mean().sort_values(ascending=False)
+
+        # Store data for Excel export
+        excel_data[leukemia_type] = leukemia_data[['city_country', pred_col]].copy()
+        excel_data[leukemia_type].columns = ['City/Country', f'{leukemia_type} Prediction Score']
+
+        # Create boxplot
+        sns.boxplot(ax=axes[i], x='city_country', y=pred_col, data=leukemia_data,
+                   order=mean_preds.index, color=color, showfliers=False)
+        axes[i].set_title(leukemia_type)
+        axes[i].tick_params(axis='x', rotation=90)  # Rotate x-axis labels vertically
+
+        # Add n values to x-axis labels
+        counts = leukemia_data['city_country'].value_counts()
+        new_labels = [f'{city}\n(n={counts[city]})' for city in mean_preds.index]
+        axes[i].set_xticklabels(new_labels)
+
+    # Set the overall title
+    fig.suptitle(title)
+
+    # Adjust layout
+    fig.tight_layout()
+
+    os.makedirs(os.path.dirname(save_path_base), exist_ok=True)
+    fig.savefig(f"{save_path_base}.svg", bbox_inches='tight')
+    plt.close(fig)
+
+    # Save data to Excel
+    if excel_data:
+        excel_path = f"{save_path_base}.xlsx"
+        with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+            for leukemia_type, data in excel_data.items():
+                data.to_excel(writer, sheet_name=leukemia_type, index=False)
+        print(f"Prediction boxplot source data saved to: {excel_path}")
+
+def plot_false_negative_boxplots(df, title, save_path_base):
+    """Create boxplots for prediction scores by city/country and leukemia type for False Negatives.
+    Shows prediction scores for each leukemia type from samples that have that leukemia type but were predicted incorrectly.
+    Only includes cities with more than 5 patients.
+    Also saves the source data to Excel."""
+    # Check if prediction columns exist
+    prediction_columns = ['prediction.ALL', 'prediction.AML', 'prediction.APL']
+    if not all(col in df.columns for col in prediction_columns):
+        warnings.warn("Prediction columns not found in dataframe. Skipping false negative prediction boxplots.")
+        return
+
+    # Replace Vessen with Essen in the dataframe (following the example)
+    df_plot = df.copy()
+    df_plot['city_country'] = df_plot['city_country'].replace('Vessen', 'Essen')
+
+    # Calculate predicted class for each sample
+    df_plot["predicted_class"] = (
+        df_plot[prediction_columns]
+        .idxmax(axis=1)
+        .str.replace("prediction.", "", regex=False)
+    )
+
+    # Create a figure and a set of subplots
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+    leukemia_types = ['AML', 'APL', 'ALL']
+    colors = ['red', 'green', 'blue']
+    prediction_cols = ['prediction.AML', 'prediction.APL', 'prediction.ALL']
+
+    # Dictionary to store data for Excel export
+    excel_data = {}
+
+    for i, (leukemia_type, color, pred_col) in enumerate(zip(leukemia_types, colors, prediction_cols)):
+        # Filter data for false negatives: samples that have this leukemia type but were predicted incorrectly
+        leukemia_data = df_plot[(df_plot['class'] == leukemia_type) & (df_plot['predicted_class'] != leukemia_type)].copy()
+
+        if len(leukemia_data) == 0:
+            axes[i].set_title(f"{leukemia_type} False Negatives\n(No false negatives found)")
+            axes[i].set_visible(False)
+            continue
+
+        # Filter to only include cities with more than 5 patients for this leukemia type analysis
+        city_counts = leukemia_data['city_country'].value_counts()
+        valid_cities = city_counts[city_counts > 5].index
+        leukemia_data = leukemia_data[leukemia_data['city_country'].isin(valid_cities)]
+
+        if len(leukemia_data) == 0:
+            axes[i].set_title(f"{leukemia_type} False Negatives\n(No cities with >5 patients)")
+            axes[i].set_visible(False)
+            continue
+
+        # Calculate mean predictions and sort cities by mean (ascending for FN - lower scores indicate missed diagnoses)
+        mean_preds = leukemia_data.groupby('city_country')[pred_col].mean().sort_values(ascending=True)
+
+        # Store data for Excel export
+        excel_data[leukemia_type] = leukemia_data[['city_country', pred_col]].copy()
+        excel_data[leukemia_type].columns = ['City/Country', f'{leukemia_type} Prediction Score']
+
+        # Create boxplot
+        sns.boxplot(ax=axes[i], x='city_country', y=pred_col, data=leukemia_data,
+                   order=mean_preds.index, color=color, showfliers=False)
+        axes[i].set_title(f"{leukemia_type} False Negatives")
+        axes[i].tick_params(axis='x', rotation=90)  # Rotate x-axis labels vertically
+
+        # Add n values to x-axis labels
+        counts = leukemia_data['city_country'].value_counts()
+        new_labels = [f'{city}\n(n={counts[city]})' for city in mean_preds.index]
+        axes[i].set_xticklabels(new_labels)
+
+    # Set the overall title
+    fig.suptitle(title)
+
+    # Adjust layout
+    fig.tight_layout()
+
+    os.makedirs(os.path.dirname(save_path_base), exist_ok=True)
+    fig.savefig(f"{save_path_base}.svg", bbox_inches='tight')
+    plt.close(fig)
+
+    # Save data to Excel
+    if excel_data:
+        excel_path = f"{save_path_base}.xlsx"
+        with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+            for leukemia_type, data in excel_data.items():
+                data.to_excel(writer, sheet_name=leukemia_type, index=False)
+        print(f"False negative prediction boxplot source data saved to: {excel_path}")
 
 def calculate_percentage_diff(current, reference):
     """Safely calculate percentage difference handling zero and invalid cases."""
@@ -537,7 +748,10 @@ def run_analysis(is_adult: bool):
         config = yaml.safe_load(f)
     config['is_adult'] = is_adult # Ensure config reflects the current cohort
 
-    df, _, features = load_data(config_path=config_path, is_adult=is_adult)
+    # Extract root directory from config
+    root_dir = config.get('root_dir', '/data/')
+
+    df, _, features = load_data(config_path=config_path, root_path=root_dir, is_adult=is_adult, filter_missing_values=False)
 
     # Get unique cohorts
     cohorts = df['city_country'].unique()
@@ -594,6 +808,25 @@ def run_analysis(is_adult: bool):
     # Create plots directory
     plots_dir = os.path.join(output_dir, 'distribution_plots')
     os.makedirs(plots_dir, exist_ok=True)
+
+    # Create boxplots for all features
+    boxplots_dir = os.path.join(output_dir, 'boxplots')
+    boxplot_title = f"{'Adult' if is_adult else 'Pediatric'} Cohort Feature Boxplots"
+    boxplot_basename = os.path.join(boxplots_dir, f'feature_boxplots_{title_suffix}')
+    plot_boxplots_by_feature(df, analysis_features, boxplot_title, boxplot_basename)
+    print(f"Feature boxplots saved to: {boxplot_basename}.png and {boxplot_basename}.svg")
+
+    # Create prediction score boxplots
+    prediction_title = f'True Positives - Prediction Scores for {"Adult" if is_adult else "Pediatric"} Cohort'
+    prediction_basename = os.path.join(boxplots_dir, f'2_tp_boxplot_{title_suffix}')
+    plot_prediction_boxplots(df, prediction_title, prediction_basename)
+    print(f"Prediction score boxplots saved to: {prediction_basename}.svg")
+
+    # Create false negative prediction score boxplots
+    fn_prediction_title = f'False Negatives - Prediction Scores for {"Adult" if is_adult else "Pediatric"} Cohort'
+    fn_prediction_basename = os.path.join(boxplots_dir, f'3_fn_boxplot_{title_suffix}')
+    plot_false_negative_boxplots(df, fn_prediction_title, fn_prediction_basename)
+    print(f"False negative prediction score boxplots saved to: {fn_prediction_basename}.svg")
 
     # Analyze each feature
     for feature in analysis_features:

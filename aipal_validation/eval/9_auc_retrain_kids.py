@@ -4,6 +4,8 @@ import os
 import yaml
 from pathlib import Path
 from sklearn.metrics import roc_curve, auc
+from .util import save_roc_source_data_to_excel
+# Manuscript Figure 5e
 
 # Add proper font settings for better text rendering
 plt.rcParams['font.family'] = 'sans-serif'
@@ -16,7 +18,7 @@ plt.rcParams['legend.fontsize'] = 12
 plt.rcParams['figure.titlesize'] = 18
 
 # Minimum number of samples required for a class to be included in the analysis
-MIN_SAMPLES_THRESHOLD = 10
+MIN_SAMPLES_THRESHOLD = 1
 
 def load_config():
     """Load configuration files from config_training.yaml."""
@@ -27,11 +29,6 @@ def load_config():
     # Load YAML config
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
-
-    # Use relative paths when possible
-    if config['root_dir'] == "/data":
-        # Replace with more accessible path
-        config['root_dir'] = '/local/work/merengelke/aipal'
 
     # Add results path if not present
     if 'root_results' not in config:
@@ -189,7 +186,7 @@ def plot_roc_curves(results, class_counts, valid_classes, config):
         print(f"  Retrained Model: {retrained_auc:.4f}")
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])  # Adjust for the main title
-    plt.suptitle('ROC Curves for Pediatric Cohort: Base vs. Retrained Model', fontsize=16)
+    plt.suptitle('ROC Curves for Pediatric Cohort: Base vs. Retrained Model on Test Set', fontsize=16)
 
     # Save the combined figure
     combined_path_svg = os.path.join(plots_dir, 'roc_pediatric_base_vs_retrained.svg')
@@ -201,6 +198,26 @@ def plot_roc_curves(results, class_counts, valid_classes, config):
 
     print(f"Saved plots to: {combined_path_svg} and {combined_path_png}")
     plt.close(fig)
+
+def extract_and_save_roc_source_data(data, valid_classes, config):
+    """Extract and save ROC source data to Excel files."""
+    plots_dir = os.path.join(config['root_results'], '9_auc_retrain_kids')
+
+    # Filter data to only include valid classes
+    data_filtered = data[data['class'].isin(valid_classes)].copy()
+
+    # Extract source data for base model
+    datasets_base = {
+        'base_model': ('Base Model', data_filtered)
+    }
+    custom_cols_base = {class_name: f'prediction.base.{class_name}' for class_name in valid_classes}
+    save_roc_source_data_to_excel(datasets_base, plots_dir, 'pediatric', valid_classes, custom_cols_base)
+
+    # Extract source data for retrained model
+    datasets_retrained = {
+        'retrained_model': ('Retrained Model', data_filtered)
+    }
+    save_roc_source_data_to_excel(datasets_retrained, plots_dir, 'pediatric', valid_classes)
 
 def main():
     """Main function to run the analysis."""
@@ -227,6 +244,9 @@ def main():
 
     # Generate and save plots
     plot_roc_curves(roc_results, class_counts, valid_classes, config)
+
+    # Extract and save ROC source data
+    extract_and_save_roc_source_data(df, valid_classes, config)
 
     print("\nAUC analysis complete.")
 
