@@ -1,5 +1,5 @@
 # Use the official Python image from the Docker Hub
-FROM python:3.9 as poetry2requirements
+FROM python:3.10 as poetry2requirements
 
 # Copy the Python project files into the image
 COPY pyproject.toml poetry.lock /

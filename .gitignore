@@ -7,3 +7,17 @@ kite/
 tmp.cmd
 .*
 jupyter
+
+# Python packaging
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+
+# IDE
+*.swp
+*.swo

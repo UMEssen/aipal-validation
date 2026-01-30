@@ -8,7 +8,7 @@ authors = ["Merlin Engelke <Merlin.Engelke@uk-essen.de>"]
 repository = "https://github.com/UMEssen/aipal-validation"
 keywords = ["fhir", "validation", "healthcare", "aipal"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Healthcare Industry",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",

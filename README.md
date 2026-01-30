@@ -1,27 +1,32 @@
-# AIPAL Validator
+# AIPAL Validation
 
-AIPAL Validator is a tool designed to streamline the validation process for [AIPAL](https://github.com/VincentAlcazer/AIPAL). Below you'll find instructions on how to set up and run this validator both locally and with Docker.
+External validation pipeline for [AIPAL](https://github.com/VincentAlcazer/AIPAL) (Acute Leukemia Prediction), a machine learning model that predicts acute leukemia subtypes (ALL, AML, APL) from routine laboratory measurements. This tool provides a FHIR-based data extraction pipeline, outlier detection, and model retraining capabilities for multicentric validation.
 
+## Citation
+
+If you use this software in your research, please cite:
+
+> *Citation will be added upon publication.*
 
 ## Local Setup
 
 ### Prerequisites
 
-- **R Installation**: Ensure R is installed on your system. If not, install it using:
+- **Python** >= 3.10
+- **R** with packages: `dplyr`, `tidyr`, `yaml`, `caret`, `xgboost`
 
   ```bash
   sudo apt-get install r-base
+  R -e "install.packages(c('dplyr', 'tidyr', 'yaml', 'caret', 'xgboost'), repos='https://cran.r-project.org/')"
   ```
 
-  Also ensure to install the following packages within R: 'dplyr', 'tidyr', 'yaml', 'caret', 'xgboost'
-
-1. Install the necessary dependencies:
+1. Install dependencies:
 
     ```bash
     poetry install
     ```
 
-2. Run the validation process. You can specify the step to run (all, data, sampling, test):
+2. Run the validation pipeline:
 
     ```bash
     poetry run aipal_validation --task aipal --step [all,data,sampling,test]
@@ -29,13 +34,14 @@ AIPAL Validator is a tool designed to streamline the validation process for [AIP
 
 ## Docker Setup
 
-1. Run the Docker container:
+1. Set your data directory and run the container:
 
     ```bash
+    export DATA_DIR=/path/to/your/data
     docker compose run aipal bash
     ```
 
-2. Inside the Docker container, execute the validation script:
+2. Inside the container:
 
     ```bash
     python -m aipal_validation --task aipal --step [all,data,sampling,test]
@@ -43,85 +49,54 @@ AIPAL Validator is a tool designed to streamline the validation process for [AIP
 
 ## Project Structure
 
-The project has the following structure:
+- `aipal_validation/` — Main package
+  - `r/` — R scripts for prediction and model training
+  - `config/` — Configuration files
+  - `data_preprocessing/` — Data preprocessing modules
+  - `eval/` — Evaluation and analysis scripts
+  - `fhir/` — FHIR data extraction, filtering, and validation
+  - `ml/` — Machine learning modules
+  - `outlier/` — Outlier detection (Isolation Forest, LOF)
+  - `helper/` — Utility functions
 
-- `aipal_validation/`: Main package containing all functionality
-  - `r/`: Contains all R scripts for prediction and model training (moved from root directory)
-  - `config/`: Configuration files
-  - `data_preprocessing/`: Data preprocessing modules
-  - `eval/`: Evaluation modules
-  - `fhir/`: FHIR-related modules
-  - `ml/`: Machine learning modules
-  - `outlier/`: Outlier detection modules
-  - `helper/`: Utility functions
+## Importing Data from Excel
 
-# Importing Data from Excel Without a Firemetrics Server
+If you don't have a FHIR server and want to import data from an Excel sheet:
 
-If you don't have a Firemetrics server running and want to import data from an Excel sheet, follow these steps:
-
-## Steps to Import Data
-
-1. **Set the `run_id`:**
-   - Update the `run_id` to match your cohort name.
-
-2. **Prepare Your Directory:**
-   - In your `root_dir`, create a folder named after your cohort.
-   - Inside this folder, create another folder named `aipal`.
-   - Place your Excel sheet in the `aipal` folder.
-
-3. **Generate Custom Samples:**
-   - Run the following command:
-     ```bash
-     python -m aipal_validation --task aipal --step sampling
-     ```
-   - This command invokes the `generate_custom_samples.py` class.
-   - Ensure the column names in your Excel file exactly match the expected names in the script.
-   - Alternatively, perform necessary data transformations within the script.
-
-4. **Run the Validation Pipeline:**
-   - Once the `samples.csv` file is successfully created, execute the following command to run the validation pipeline:
-     ```bash
-     python -m aipal_validation --task aipal --step test
-     ```
-
-# Outlier Detection
-
-To run outlier detection on your dataset and identify potential anomalies:
-
-1. **Local Setup:**
+1. Update the `run_id` in the config to match your cohort name.
+2. In your `root_dir`, create `<cohort_name>/aipal/` and place your Excel sheet there.
+3. Generate samples:
    ```bash
-   poetry run aipal_validation --task outlier --step detect
+   python -m aipal_validation --task aipal --step sampling
+   ```
+   Ensure column names in your Excel file match those expected by `generate_custom_samples.py`.
+4. Run the validation pipeline:
+   ```bash
+   python -m aipal_validation --task aipal --step test
    ```
 
-2. **Docker Setup:**
-   ```bash
-   docker compose run aipal bash
-   python -m aipal_validation --task outlier --step detect
-   ```
+## Outlier Detection
 
-The outlier detection uses isolation forest and local outlier factor (LOF) algorithms to identify samples that deviate significantly from the expected patterns in each class.
+Run outlier detection using Isolation Forest and Local Outlier Factor (LOF):
 
-# Model Retraining (on pediatric subset)
+```bash
+poetry run aipal_validation --task outlier --step detect
+```
 
-To retrain the AIPAL model with your dataset:
+## Model Retraining (Pediatric Subset)
 
-1. **Local Setup:**
-   ```bash
-   poetry run aipal_validation --task retrain --step all
-   ```
+Retrain the AIPAL model on a pediatric subset (age < 18):
 
-2. **Docker Setup:**
-   ```bash
-   docker compose run aipal bash
-   python -m aipal_validation --task retrain --step all
-   ```
+```bash
+poetry run aipal_validation --task retrain --step all
+```
 
-The retraining process will:
-- Split your data into training and testing sets
-- Train an XGBoost model on the pediatric subset (age < 18)
-- Save the retrained model and prediction outputs to the `aipal_validation/r/` directory
-- Perform evaluation on the test set
+This will split data into training/testing sets, train an XGBoost model, save the retrained model to `aipal_validation/r/`, and evaluate on the test set.
 
 ## Credits
 
-The XGBoost model file (`221003_Final_model_res_list.rds`) included in this repository was obtained from [VincentAlcazer/AIPAL](https://github.com/VincentAlcazer/AIPAL) (MIT License). No source code from the original repository is reused; only the trained model asset is redistributed for validation purposes.
+The XGBoost model file (`221003_Final_model_res_list.rds`) was obtained from [VincentAlcazer/AIPAL](https://github.com/VincentAlcazer/AIPAL) (MIT License). No source code from the original repository is reused; only the trained model asset is redistributed for validation purposes.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

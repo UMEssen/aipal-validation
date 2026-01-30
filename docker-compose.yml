@@ -1,39 +1,23 @@
-version: '2.3' # nvidia-docker2 requires version 2.3 in order to be able to specify the container runtime
-
 services:
   aipal:
     build:
       context: .
       dockerfile: "Dockerfile"
-    user: $DOCKER_USER:$DOCKER_GROUP
-    image: "ship-ai/aipal_validation"
-    runtime: nvidia
+    image: "aipal-validation"
     shm_size: 32g
-    ulimits:
-      memlock: -1
-      stack: 67108864
     environment:
-      - NVIDIA_VISIBLE_DEVICES=0
       - FHIR_USER
       - FHIR_PASSWORD
       - SEARCH_URL
       - BASIC_AUTH
-      - BASIC_AUTH_UME
-      - REFRESH_AUTH
-      - METRICS_USER
-      - METRICS_PASSWORD
-      - METRICS_HOSTNAME
-      - METRICS_PORT
-      - METRICS_DB
-      - WANDB_API_KEY=$WANDB_API_KEY
+      - WANDB_API_KEY
       - WANDB_DIR=/data/wandb
       - WANDB_CACHE_DIR=/data/wandb
       - WANDB_CONFIG_DIR=/data/wandb
       - WANDB_DATA_DIR=/data/wandb
     volumes:
       - .:/app
-      - /local/work/merengelke/aipal:/data
-
+      - ${DATA_DIR:-./data}:/data
 
 networks:
   default:
