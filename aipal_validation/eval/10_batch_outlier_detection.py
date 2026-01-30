@@ -275,6 +275,7 @@ def predict_classes_with_r(df, task_dir):
             "Rscript", "-e",
             f"""
             library(dplyr)
+            # Model sourced from https://github.com/VincentAlcazer/AIPAL (MIT License)
             res_list <- readRDS("aipal_validation/r/221003_Final_model_res_list.rds")
             model <- res_list$final_model
             new_data <- read.csv("{temp_csv}")

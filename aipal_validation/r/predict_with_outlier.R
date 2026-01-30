@@ -32,6 +32,9 @@ if (is_outlier_all) {
 }
 
 # Load model and predictions
+# This model file is sourced from the original AIPAL repository
+# https://github.com/VincentAlcazer/AIPAL
+# Licensed under MIT
 res_list <- readRDS("aipal_validation/r/221003_Final_model_res_list.rds")
 model <- res_list$final_model
 

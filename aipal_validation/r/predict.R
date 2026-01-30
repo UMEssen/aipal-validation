@@ -7,6 +7,9 @@ sessionInfo()
 
 # Load model, predictions, config
 config <- yaml.load_file("aipal_validation/config/config_training.yaml")
+# This model file is sourced from the original AIPAL repository
+# https://github.com/VincentAlcazer/AIPAL
+# Licensed under MIT
 res_list <- readRDS("aipal_validation/r/221003_Final_model_res_list.rds")
 model <- res_list$final_model
 root_dir <- sub("^/", "", config$root_dir)

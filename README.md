@@ -121,3 +121,7 @@ The retraining process will:
 - Train an XGBoost model on the pediatric subset (age < 18)
 - Save the retrained model and prediction outputs to the `aipal_validation/r/` directory
 - Perform evaluation on the test set
+
+## Credits
+
+The XGBoost model file (`221003_Final_model_res_list.rds`) included in this repository was obtained from [VincentAlcazer/AIPAL](https://github.com/VincentAlcazer/AIPAL) (MIT License). No source code from the original repository is reused; only the trained model asset is redistributed for validation purposes.
